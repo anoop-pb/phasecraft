@@ -68,17 +68,40 @@ Stages generally run in order, and the framework will block you if a prerequisit
 
 - [Claude Code](https://docs.anthropic.com/en/docs/claude-code) installed and working
 - A git-initialized repository for your project
-
+  
+  
 ### Setup
+
+> **Note:** Claude Code's plugin system is a likely future distribution path for PhaseCraft after further testing has happened.  
+> This would replace the manual copy steps below with a single `/plugin install` command.  
+
+**macOS / Linux / Git Bash / WSL:**
 
 ```bash
 # 1. Create project repo
 mkdir my-project && cd my-project && git init
 
-# 2. Download and Copy PhaseCraft framework files into your project root
+# 2. Copy PhaseCraft framework files into your project root
 cp /path/to/phasecraft/CLAUDE.md .
 cp /path/to/phasecraft/DOMAIN-PERSONA.md .
-cp -r /path/to/phasecraft/claude/ .claude/
+mkdir -p .claude
+cp -r /path/to/phasecraft/claude/. .claude/
+
+# 3. Open Claude Code and run
+/start
+```
+
+**Windows PowerShell:**
+
+```powershell
+# 1. Create project repo
+New-Item -ItemType Directory my-project; Set-Location my-project; git init
+
+# 2. Copy PhaseCraft framework files into your project root
+Copy-Item C:\path\to\phasecraft\CLAUDE.md .
+Copy-Item C:\path\to\phasecraft\DOMAIN-PERSONA.md .
+New-Item -ItemType Directory -Force .claude | Out-Null
+Copy-Item C:\path\to\phasecraft\claude\* -Destination .claude -Recurse -Force
 
 # 3. Open Claude Code and run
 /start
