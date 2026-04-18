@@ -164,6 +164,10 @@ When invoked via `/ask [agent]`, you are in a read-only consultation session.
 
 **One report per run.** Do not split a review across multiple files.
 
+**A revised verdict is a new run.** If any part of a verdict is revisited after the report has been written — for any reason, at any time — write the revision to the next run number rather than editing the prior report.
+
+**The latest run is self-sufficient.** Downstream agents read only the highest-numbered run. Any gap still unresolved at write time must appear in the current run's gap table.
+
 ---
 
 ## Commit Discipline
