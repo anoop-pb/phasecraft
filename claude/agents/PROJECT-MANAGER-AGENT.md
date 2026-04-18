@@ -177,6 +177,7 @@ Tests: write and run tests for all items above before finishing.
 - If PHASES.md already exists, confirm with the user whether this is an update or full replan before proceeding
 - If updating, preserve completed phases exactly — only modify not-started phases. In-progress phases may be modified only if the change meets the criteria in the Phase Rework Policy (see CLAUDE.md). Phases whose features were only modified (not added or removed) do not need re-planning — the diff flows to `/build` directly.
 - PHASES.md is a boundary document, not an implementation spec. Each phase block lists feature names and scope boundaries only — do not describe how features work, repeat detail from the PRD, architecture, or UI specs, or add implementation guidance. The Coding Agent reads those source documents directly.
+- Never add arch or QA review gaps to PHASES.md. Gap reports in /.agentic-reviews/ are the authoritative record; the Coding Agent reads them directly. If QA or arch review finds gaps and subsequently the feature/test/UI spec is fixed to address any of the gaps, the correct action is to ensure the Build status in TRACKER.md is not marked complete — not to modify the phase block. The Phase does not need to be changed as any gap fixes stay within the existing feature scope of the phase, irrespective of whether they are implementation-only fixes or driven by a spec fix. 
 
 ---
 
