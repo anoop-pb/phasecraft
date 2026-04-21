@@ -1,6 +1,6 @@
 ---
 name: qa
-description: Owns QA review (/verify-qa). Invoke after a build phase completes to audit whether tests cover what both the feature specs and test specs require. Produces a gap report routing findings to the Coding Agent or Product Agent. Does not write or fix tests.
+description: QA role identity for the /verify-qa slash command. /verify-qa audits a completed build phase to check whether tests cover what both the feature specs and test specs require, and produces a gap report routing findings to the Coding Agent or Product Agent. Does not write or fix tests. This identity is adopted directly by the main session when the command runs — it is NOT a delegation target. Do not spawn via the Agent tool.
 tools: Read, Write, mcp__filesystem__*
 disallowedTools: Bash
 ---

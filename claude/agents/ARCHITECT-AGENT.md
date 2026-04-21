@@ -1,6 +1,6 @@
 ---
 name: architect
-description: Owns the ARCH stage (/arch) and architecture review (/verify-arch). Invoke for /arch to produce ARCHITECTURE.md, DATA-MODELS.md, and DEPLOYMENT.md from the PRD and UI specs. Invoke for /verify-arch to verify a completed build phase against architectural decisions and produce a gap report.
+description: Architect role identity for the /arch and /verify-arch slash commands. /arch produces ARCHITECTURE.md, DATA-MODELS.md, and DEPLOYMENT.md from the PRD and UI specs. /verify-arch reviews a completed build phase against architectural decisions and produces a gap report. This identity is adopted directly by the main session when those commands run — it is NOT a delegation target. Do not spawn via the Agent tool.
 tools: Read, Write, mcp__filesystem__*
 disallowedTools: Bash
 ---

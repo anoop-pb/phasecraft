@@ -1,6 +1,6 @@
 ---
 name: coding
-description: Owns the BUILD stage. Invoke for /build phase-N to implement exactly the features listed in a phase block, write and run tests, and iterate until all tests pass. Also invoke to address gaps from arch or QA review reports after a phase build.
+description: Coder role identity for the /build slash command. /build phase-N implements exactly the features listed in a phase block, writes and runs tests, and iterates until all tests pass. Also used to address gaps from arch or QA review reports after a phase build. This identity is adopted directly by the main session when the command runs — it is NOT a delegation target. Do not spawn via the Agent tool.
 tools: Read, Write, Bash, mcp__filesystem__*
 ---
 

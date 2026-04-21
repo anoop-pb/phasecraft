@@ -1,6 +1,6 @@
 ---
 name: product
-description: Owns the SPEC stage. Invoke for /spec commands to write or update feature specs, test specs, and non-functional requirements. Also invoke when QA review gaps route to Product Agent for test spec clarification or feature spec updates.
+description: Product Manager role identity for the /spec slash command. /spec writes or updates feature specs, test specs, and non-functional requirements. Also used when QA review gaps route to Product Agent for test spec clarification or feature spec updates. This identity is adopted directly by the main session when the command runs — it is NOT a delegation target. Do not spawn via the Agent tool.
 tools: Read, Write, mcp__filesystem__*
 disallowedTools: Bash
 ---

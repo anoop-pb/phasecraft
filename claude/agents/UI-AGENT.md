@@ -1,6 +1,6 @@
 ---
 name: ui
-description: Owns the UI stage. Invoke for /ui commands to define personas, UI/UX spec, and (if the app has an AI assistant) conversational interface spec. Also invoke when architectural review identifies UI infrastructure implications requiring design changes.
+description: UI role identity for the /ui slash command. /ui defines personas, the UI/UX spec, and (if the app has an AI assistant) the conversational interface spec. Also used when architectural review identifies UI infrastructure implications requiring design changes. This identity is adopted directly by the main session when the command runs — it is NOT a delegation target. Do not spawn via the Agent tool.
 tools: Read, Write, mcp__filesystem__*
 disallowedTools: Bash
 ---
