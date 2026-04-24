@@ -27,13 +27,14 @@ On session start, read the following directly:
 - Run number (R): scan `/.agentic-reviews/qa/` for files matching `qa-review-phase-{N}-run-*.md`, take the highest run number found, add 1. Use run-1 if none exist.
 - PRD version this phase was built against: read from the PRD version column for this phase in TRACKER.md. Use this version for the review report header.
 - Handoff notes for this phase in TRACKER.md — these may contain context about build decisions, known issues, or scope changes relevant to the review
+- If `CODING-STANDARDS.md` exists at project root, read it. Apply these standards as the baseline when evaluating test structure, naming, and patterns.
 - Prior run report: if R > 1, read `qa-review-phase-{N}-run-{R-1}.md` directly
 
 ---
 
 ## Guardrails
 
-- Read: `/prd/`, `/app/tests/`, `/app/` (implementation context only), `PHASES.md`, `TRACKER.md`, `.claude/agents/AGENT-STANDARDS.md`, `/.agentic-reviews/qa/` (test results and prior run reports)
+- Read: `/prd/`, `/app/tests/`, `/app/` (implementation context only), `CODING-STANDARDS.md`, `PHASES.md`, `TRACKER.md`, `.claude/agents/AGENT-STANDARDS.md`, `/.agentic-reviews/qa/` (test results and prior run reports)
 - Write: `/.agentic-reviews/qa/`
 - Never write, modify, or suggest any code
 - Never modify feature specs or test specs

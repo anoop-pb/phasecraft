@@ -66,10 +66,11 @@ If TRACKER.md shows Build status for this phase as `in progress`:
 2. Read the feature spec and test spec files for each feature in the phase block — these are in `/prd/sections/03-functional-requirements/` as paired `[number]-[feature-name].md` and `[number]-[feature-name]-tests.md` files (e.g., `01-auth.md` and `01-auth-tests.md`)
 3. Read the latest PRD summary from `/prd/output/` (file matching `PRD-SUMMARY-v*.md`, highest version) for cross-feature context, dependency map, and NFR flags. Do not read the full compiled PRD.
 4. Read ARCHITECTURE.md and DATA-MODELS.md
-5. Read `/ui/` — check for `01-personas.md`, `02-ui-ux-spec.md`, and `03-conversational-interface.md` and read whichever exist for visual identity and interaction context. Check `/ui/mockups/` for mockups relevant to features in this phase and treat them as visual specifications for the generated UI. UI specs may cover features beyond this phase — implementation scope is governed solely by the phase block, not by what appears in UI files.
-6. If prior phases exist, read the existing code in `/app/` to understand established patterns before writing anything
-7. Check for PRD changes since the last build: read the PRD version column for this phase in TRACKER.md to find the PRD version used in the previous build run. If a diff exists in `/prd/diffs/` for a version newer than that, read the latest diff file (`DIFF-v{old}-to-v{new}.md`, sorted by version). If the latest PRD version has no corresponding diff file, stop and tell the user to run `/spec` to generate the required diff between {old} and {new} versions — do not assume that whichever diff is present in the folder is current. On the first build run for a phase (PRD version column is `—`), there is no previous version — skip this step.
-8. If this is a re-run after gap reports: scan `/.agentic-reviews/arch/` and `/.agentic-reviews/qa/` for files matching `*-phase-{N}-run-*.md`, read the highest-numbered run for each, and understand what needs to be addressed before writing any code.
+5. If `CODING-STANDARDS.md` exists at project root, read it. Its rules override any overlapping rules in the Code Standards section of this agent MD for implementation style (naming, formatting, error handling, commenting, test patterns). It does not override Architecture Compliance, Separation of Concerns,  or Non-Negotiables from ARCHITECTURE.md.
+6. Read `/ui/` — check for `01-personas.md`, `02-ui-ux-spec.md`, and `03-conversational-interface.md` and read whichever exist for visual identity and interaction context. Check `/ui/mockups/` for mockups relevant to features in this phase and treat them as visual specifications for the generated UI. UI specs may cover features beyond this phase — implementation scope is governed solely by the phase block, not by what appears in UI files.
+7. If prior phases exist, read the existing code in `/app/` to understand established patterns before writing anything
+8. Check for PRD changes since the last build: read the PRD version column for this phase in TRACKER.md to find the PRD version used in the previous build run. If a diff exists in `/prd/diffs/` for a version newer than that, read the latest diff file (`DIFF-v{old}-to-v{new}.md`, sorted by version). If the latest PRD version has no corresponding diff file, stop and tell the user to run `/spec` to generate the required diff between {old} and {new} versions — do not assume that whichever diff is present in the folder is current. On the first build run for a phase (PRD version column is `—`), there is no previous version — skip this step.
+9. If this is a re-run after gap reports: scan `/.agentic-reviews/arch/` and `/.agentic-reviews/qa/` for files matching `*-phase-{N}-run-*.md`, read the highest-numbered run for each, and understand what needs to be addressed before writing any code.
    For each gap:
    - Arch gap (Critical or Major): understand the violation and the correct pattern before fixing affected files
    - Arch gap (Minor): fix if the change is local and low-risk; otherwise note and defer to architecture review
@@ -120,6 +121,8 @@ Do not silently include extra features. If "implemented but not specced" items e
 ---
 
 ## Code Standards
+
+> If `CODING-STANDARDS.md` exists at project root, its rules take precedence over any overlapping guidance in this section, but do not override Architecture Compliance, Separation of Concerns, or Non-Negotiables from ARCHITECTURE.md.
 
 ### Architecture Compliance
 
