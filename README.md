@@ -1,13 +1,16 @@
 # PhaseCraft — An Opinionated Agentic Development Framework
 
-PhaseCraft is a multi-agent SDLC framework for [Claude Code](https://docs.anthropic.com/en/docs/claude-code). It gives you a team of specialized AI agents — Product, UI, Architect, Coding, QA and Project Manager, each with strict role boundaries and file access controls. You run slash commands; agents handle spec, design, architecture, implementation, and review through a structured lifecycle.
+PhaseCraft is a multi-agent SDLC framework for [Claude Code](https://docs.anthropic.com/en/docs/claude-code). It implements a lifecycle-staged, spec-driven approach to software development with AI agents. You get a team of specialized AI agents — Product Analyst, UI Specialist, Architect, Coder, QA Engineer and Project Manager, each with well defined role boundaries and scoped file access. Every piece of work has a clear role owner. You run slash commands; agents handle spec, design, architecture, implementation, and review through a structured lifecycle.  
+
+For the thinking behind this approach, see [The Lure of Malleability in AI-generated Software](https://adaptive.svbtle.com/the-lure-of-malleability-in-ai-generated-software).  
 
 Work is organized into phases — coherent, dependency-ordered sets of features, each fully built, tested, and reviewed before the next phase begins. Think of a **phase as a sprint scoped for AI**: bounded by token limits and context drift, not time.
 
-> **Beta** — this framework is under active development and testing on Claude Code via Claude Desktop. Other environments have not been tested. Expect rough edges, submit feedback/bugs and check back for updates.
-
 A *session* in this README means one Claude Code conversation — from the moment you type a slash command to when the agent prints its handoff summary.  
 **Important:** Each slash command should run in its own session to avoid context bleed between agents.
+
+> **Beta** — this framework is under active development and testing on Claude Code via Claude Desktop. Other environments have not been tested. Expect rough edges, submit feedback/bugs and check back for updates.
+
 
 ---
 
@@ -64,11 +67,13 @@ Stages generally run in order, and the framework will block you if a prerequisit
 
 ## Quick Start & First Project
 
+
 ### Prerequisites
 
-- [Claude Code](https://docs.anthropic.com/en/docs/claude-code) installed and working
-- A git-initialized repository for your project
-  
+- [Claude Code](https://docs.anthropic.com/en/docs/claude-code) installed and working. PhaseCraft is specific to Claude Code — it uses Claude Code's agent, command, and file-access primitives. It is not directly usable with just the Claude API, Claude.ai chat, or other LLM clients.
+- An active Claude subscription — Pro at minimum, Max recommended for projects of medium complexity or higher. The framework is token-heavy.
+- A git-initialized repository for your project.
+
   
 ### Setup
 
@@ -320,6 +325,13 @@ PhaseCraft does not enforce a model per command — choose based on your account
 | `/ask` | Sonnet | Conversational Q&A |
 
 When in doubt, use Sonnet for speed and cost, Opus when the output has significant downstream consequences.
+
+**Subscription tier guidance.** Opus sessions consume tokens significantly faster than Sonnet sessions, and the framework recommends Opus for the commands where reasoning depth matters most (`/arch`, `/verify-arch`, `/verify-qa`). This affects subscription tier choice:
+
+- **Pro:** workable for small projects with few phases and simple architecture. Likely to exhaust Opus quota early in any non-trivial project.
+- **Max:** recommended for real-world use. Multi-phase projects with meaningful architecture reviews benefit substantially from the higher quota.
+
+Choosing Sonnet for all commands extends your quota significantly, at some cost to arch and review quality.
 
 ### Multi-engineer usage
 
