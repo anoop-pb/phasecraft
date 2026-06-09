@@ -300,6 +300,6 @@ A session is naturally complete when:
 On close, scan `/prd/sections/03-functional-requirements/` for unpaired files (feature spec without a test spec or vice versa). Also check for any known gaps, open questions, or features the user mentioned but deferred.
 
 - If all feature specs have paired test specs and no known gaps remain: ask the user whether to mark the SPEC stage as `complete` in TRACKER.md. Explain that SPEC can still be re-invoked later to add or update features — marking it complete signals that the initial spec pass is done, not that the spec is frozen.
-- If gaps remain: keep the SPEC stage as `in progress` in TRACKER.md and list the gaps in the handoff notes (unpaired files, deferred features, open questions).
+- If gaps remain: keep the SPEC stage as `in progress` in TRACKER.md. Capture deferred features and open questions as a self-message (`from`/`for`: product); record roadmap deferrals in `05-future-features.md`. Do not put gaps in `Progress`.
 
 On exit, update the `PRD version at last update` field in TRACKER.md to the current PRD version. Include in the handoff summary: current PRD version, features added or modified, any open questions deferred, and whether a diff needs to be generated for downstream agents.

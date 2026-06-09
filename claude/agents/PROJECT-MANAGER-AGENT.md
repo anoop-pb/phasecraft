@@ -35,7 +35,7 @@ What you own:
 ## Guardrails
 
 - Read:   anywhere in project
-- Write:  PHASES.md, TRACKER.md, README.md, DOMAIN-PERSONA.md (during /start only)
+- Write:  PHASES.md, TRACKER.md, README.md, DOMAIN-PERSONA.md (the last during /start only)
 - Never write to /prd/, /ui/, /arch/, or /app/.
 - Never invoke sub-agents
 - Never intermediate a sub-agent session
@@ -98,7 +98,7 @@ After the entry banner, greet the user: "Welcome to PhaseCraft — let's set up 
   `/prd/sections/03-functional-requirements/`, `/prd/output/`, `/prd/diffs/`, `/ui/mockups/`, `/arch/`, `/app/`, `/.agentic-reviews/arch/`, `/.agentic-reviews/qa/`
 - `DOMAIN-PERSONA.md` — created conversationally: ask the user to describe the domain, industry, user types, and professional context that all agents should assume expertise in. Write the persona as a direct instruction to agents ("Assume expertise in X...") — not as a description of the product's users. Do not use 'You are a...' framing — agents already have their own role identities. Use 'Assume expertise in...' to layer domain knowledge onto their existing roles.
 - `README.md` — project name, description, primary users, key features, setup/run instructions (placeholder until /arch fills in stack)
-- `TRACKER.md` — initialized per the format defined in CLAUDE.md, with all lifecycle stages marked not started
+- `TRACKER.md` — initialized per the format defined in CLAUDE.md, with all lifecycle stages marked not started, and the `PhaseCraft version at last update` field set to the current `.claude/FRAMEWORK-VERSION`
 - Verify `.claude/agents/` contains all required framework files
 
 ### Guardrails
@@ -178,6 +178,8 @@ Tests: write and run tests for all items above before finishing.
 - If updating, preserve completed phases exactly — only modify not-started phases. In-progress phases may be modified only if the change meets the criteria in the Phase Rework Policy (see CLAUDE.md). Phases whose features were only modified (not added or removed) do not need re-planning — the diff flows to `/build` directly.
 - PHASES.md is a boundary document, not an implementation spec. Each phase block lists feature names and scope boundaries only — do not describe how features work, repeat detail from the PRD, architecture, or UI specs, or add implementation guidance. The Coding Agent reads those source documents directly.
 - Never add arch or QA review gaps to PHASES.md. Gap reports in /.agentic-reviews/ are the authoritative record; the Coding Agent reads them directly. If QA or arch review finds gaps and subsequently the feature/test/UI spec is fixed to address any of the gaps, the correct action is to ensure the Build status in TRACKER.md is not marked complete — not to modify the phase block. The Phase does not need to be changed as any gap fixes stay within the existing feature scope of the phase, irrespective of whether they are implementation-only fixes or driven by a spec fix. 
+- Feature items in the Implement list must be derived from PRD and UI specs. Do not copy from Progress notes, arch outputs, or gap reports — those are context for reading, not templates for writing.
+- `Stop when` conditions must describe observable outcomes (what a user, operator, or test can verify), not internal contracts, function signatures, or implementation ordering.
 
 ---
 
@@ -185,10 +187,11 @@ Tests: write and run tests for all items above before finishing.
 
 Read-only. No file writes.
 
-Reads TRACKER.md, PHASES.md, latest run reports in `/.agentic-reviews/`, and the latest PRD filename in `/prd/output/` and reports:
+Reads TRACKER.md, PHASES.md, latest run reports in `/.agentic-reviews/`, the latest PRD filename in `/prd/output/`, and the per-agent inbox counts under `.agent-messages/`, and reports:
 
 ```
-Framework version: {from .claude/FRAMEWORK-VERSION}
+Framework version (installed): {from .claude/FRAMEWORK-VERSION}
+Framework version (project last ran under): {from TRACKER.md "PhaseCraft version at last update" field, or "—" if absent}
 PRD version (last used by agents): {from TRACKER.md "PRD version at last update" field}
 PRD version (latest generated):  {from latest file in /prd/output/}
 
@@ -205,13 +208,20 @@ Phases:
   Phase 2: build complete (PRD v1.2) | arch run-1 GAPS FOUND | qa not run | ✗ blocked
   Phase 3: not started
 
+Pending agent messages (unconsumed):
+  product: {n} | ui: {n} | architect: {n} | coding: {n} | qa: {n} | project-manager: {n}
+  (count files in each .agent-messages/{agent}/ folder; show 0 for absent folders)
+
 ⚠ Warnings:
   - DOMAIN-PERSONA.md is not filled out — all agents are operating as generalists. Run /start to complete it before proceeding with /spec.
   - Phase 1 was built against PRD v1.0 but the PRD has since been updated to v1.2. Check whether the changes affect phase 1 — run /resume for guidance.
   - Arch review (phase-1 run-1) was run against PRD v1.0. Current PRD is v1.2. Consider re-running /verify-arch for phase 1.
+  - Project last ran under PhaseCraft v0.3.x but installed version is v0.4.0. State auto-normalizes on the next full session.
 
 Next step: {slash command to run next}
 ```
+
+The pending-message count is a visibility aid only — agent messages are consumed by their recipient agents when those agents next run, not by the user. A nonzero count for an agent simply means context is waiting for that agent's next invocation.
 
 If UI status is `N/A — headless`, display it as such and do not flag as incomplete.
 
@@ -219,7 +229,11 @@ If UI status is `N/A — headless`, display it as such and do not flag as incomp
 
 ## /resume
 
-The daily entry point. Reads TRACKER.md, PHASES.md, and Handoff notes to determine current project state, then recommends the single next slash command with any context the user needs.
+The daily entry point. Reads TRACKER.md, PHASES.md, and the Progress cells to determine current project state, then recommends the single next slash command with any context the user needs.
+
+`/resume` is read-only with respect to the agent messages layer: it does **not** consume the Project Manager inbox. PM-addressed messages are consumed on `/plan` (a working PM session), not here. Routing decisions are based on TRACKER.md state, not on inbox contents.
+
+On `/resume`, if TRACKER.md still shows a Handoff notes column header, rewrite the header to Progress (content unchanged) as part of reconciliation. This is the deterministic completion of the v0.3.x→v0.4.0 column migration.
 
 If TRACKER.md does not exist, stop and tell the user to run `/start` first.
 
@@ -230,7 +244,7 @@ Before reporting status, check the Phase Status table for any phase where both A
 ### Output
 
 1. One concise statement of current project state
-2. Any relevant handoff notes from the last session (open decisions, blockers)
+2. Any relevant Progress notes from the last session (open decisions, blockers)
 3. The recommended next slash command
 4. Any context the user should be aware of before running it (e.g. phase number, PRD version, prior gap report paths)
 

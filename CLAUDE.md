@@ -28,9 +28,17 @@ BUILD and REVIEW repeat for each phase. A phase is not complete until both archi
 
 ---
 
+## Terminology
+
+- **Progress** — the per-row TRACKER.md column holding the current in-flight unit of work (crash-resilience scratch). Not a communication channel.
+- **Agent message** — a directed prose note from one agent to another via `.agent-messages/`. Not human-facing.
+- **Handoff summary** — the human-facing recap printed in chat on session exit.
+
+---
+
 ## TRACKER.md Format
 
-TRACKER.md is the single source of truth for lifecycle and phase status, read and updated by all agents.
+TRACKER.md is the single source of truth for lifecycle and phase **state**, read and updated by all agents. State tracking only — directed agent-to-agent communication does not live here. That flows through the agent messages layer (format defined below under Agent Messages Format; behavioral rules in `AGENT-STANDARDS.md` → Agent Messages).
 
 ### Lifecycle Status Table
 
@@ -38,15 +46,16 @@ TRACKER.md is the single source of truth for lifecycle and phase status, read an
 # Project Tracker
 
 PRD version at last update: —
+PhaseCraft version at last update: —
 
 ## Lifecycle Status
 
-| Stage   | Status      | Last updated | Handoff notes |
-|---------|-------------|--------------|---------------|
-| SPEC    | not started | —            |               |
-| UI      | not started | —            |               |
-| ARCH    | not started | —            |               |
-| PLAN    | not started | —            |               |
+| Stage   | Status      | Last updated | Progress |
+|---------|-------------|--------------|----------|
+| SPEC    | not started | —            |          |
+| UI      | not started | —            |          |
+| ARCH    | not started | —            |          |
+| PLAN    | not started | —            |          |
 ```
 
 ### Phase Status Table
@@ -54,11 +63,21 @@ PRD version at last update: —
 ```
 ## Phase Status
 
-| Phase | PRD version | Build | Arch Review | QA Review | Complete | Handoff notes |
-|-------|-------------|-------|-------------|-----------|----------|---------------|
+| Phase | PRD version | Build | Arch Review | QA Review | Complete | Progress |
+|-------|-------------|-------|-------------|-----------|----------|----------|
 
 (phases added by /plan)
 ```
+
+### The Progress Column
+
+`Progress` is per-session crash-resilience scratch — it records the **in-flight unit of work** for the current stage or phase row, and is overwritten as work proceeds (not appended). Its only purpose is to ensure that an abruptly ended session loses at most the current unit of work. It is not a log, not an audit trail, and not a channel for handing context to another agent — directed handoffs go through the agent messages layer.
+
+**Legacy note:** trackers created before this version may show this column labeled `Handoff notes`. Treat it as `Progress`. The first agent to write the row normalizes the header to `Progress`. No other migration is required — existing content remains valid in-flight context.
+
+### Version Stamp
+
+`PhaseCraft version at last update` records the framework version the project last ran under (read from `.claude/FRAMEWORK-VERSION`). The first agent to write TRACKER.md in a session sets this field to the current framework version. It exists so framework drift is detectable across upgrades.
 
 ### Phase Status Column Values
 
@@ -69,6 +88,67 @@ PRD version at last update: —
 | Arch Review | `—` (not run) → `run-{R} CLEAR` or `run-{R} GAPS FOUND` |
 | QA Review | `—` (not run) → `run-{R} CLEAR` or `run-{R} GAPS FOUND` |
 | Complete | `—` → `✓ complete` (set by `/resume` reconciliation when both reviews show CLEAR on latest run) |
+
+---
+
+## Agent Messages Format
+
+The agent messages layer is the channel for directed agent-to-agent communication, separate from TRACKER.md state. The *behavioral rules* (when to read, the consume sequence, the write carve-out, sending on exit) live in `AGENT-STANDARDS.md` → Agent Messages. This section defines only the static contract: where messages live, how they are named, and what they contain.
+
+### Layout
+
+```
+.agent-messages/                 ← transient; agent-to-agent communication
+  product/                       ← one inbox folder per recipient agent
+  ui/
+  architect/
+  coding/
+  qa/
+  project-manager/
+```
+
+Recipient folder names match agent names: `product`, `ui`, `architect`, `coding`, `qa`, `project-manager`. One file per message. The structure is created lazily — the sender creates the recipient's folder if it does not exist (`mkdir -p` semantics). A fresh clone has no `.agent-messages/` until the first message is sent; an absent inbox simply means no messages.
+
+### Filename
+
+```
+{timestamp}__{from-agent}__{discriminator}.md
+```
+
+- `timestamp` — UTC ISO-8601 with filesystem-safe separators, e.g. `2026-05-21T08-57-03Z` (use `-` in place of `:`). The leading timestamp gives a deterministic chronological read order within an inbox.
+- `from-agent` — the sending agent's name, for uniqueness and at-a-glance triage.
+- `discriminator` — the operator value if known, else a short random nonce (e.g. 4 hex chars). Guarantees filename uniqueness across operators working independently, so concurrent pushes never collide.
+
+If a same-instant, same-sender collision would occur, append a numeric suffix: `{timestamp}__{from-agent}-2.md`.
+
+### Message contents
+
+YAML frontmatter carries the deterministic fields; the body is prose written for the receiving agent.
+
+```
+---
+from: coding
+for: qa
+stage: REVIEW          # lifecycle stage the message concerns
+phase: 2               # phase number, or — if not phase-scoped
+operator: —            # human owner/operator if known, else —
+type: handoff          # see enum below
+created: 2026-05-21T08:57:03Z
+---
+
+Prose message to the receiving agent.
+```
+
+`type` is a closed enum:
+
+| Type | Meaning |
+|------|---------|
+| `handoff` | Context the next agent needs to continue the work |
+| `gap-routed` | Pointing the recipient at something to address that is *not* already captured in a review report (formal arch/QA gaps still travel via reports, not messages) |
+| `escalation` | Needs a decision or attention from the recipient |
+| `ratification` | The sender already acted on or decided something (at the user's explicit request) that falls in the recipient's area of authority, and asks the recipient to validate or flag it on its next invocation. Use only when acting now was absolutely necessary — not as a routine way to cross role boundaries. |
+| `blocker` | Something the recipient owns is preventing progress |
+| `info` | FYI, no action required |
 
 ---
 

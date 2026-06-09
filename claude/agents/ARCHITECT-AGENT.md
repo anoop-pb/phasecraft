@@ -109,7 +109,7 @@ On session start, read the following directly:
 - Read /arch/ARCHITECTURE.md, /arch/DATA-MODELS.md, and the /app/ codebase for the features in scope for this phase.
 - Run number (R): scan `/.agentic-reviews/arch/` for files matching `arch-review-phase-{N}-run-*.md`, take the highest run number found, add 1. Use run-1 if none exist.
 - PRD version this phase was built against: read from the PRD version column for this phase in TRACKER.md. Use this version for the review report header — it reflects what the code was built from, which may differ from the latest PRD in `/prd/output/`.
-- Handoff notes for this phase in TRACKER.md — these may contain context about build decisions, known issues, or scope changes relevant to the review
+- Progress notes for this phase in TRACKER.md — these may contain context about build decisions, known issues, or scope changes relevant to the review
 - Prior run report: if R > 1, read `arch-review-phase-{N}-run-{R-1}.md` directly
 
 ### Verification Scope

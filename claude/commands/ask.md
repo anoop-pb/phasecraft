@@ -27,6 +27,7 @@ Resolve the agent name from `$ARGUMENTS`:
 3. Read `TRACKER.md` (informational — prerequisites do not block /ask sessions)
 4. Print the entry banner with Agent Name: [resolved agent name], Session type: Read-only (/ask) and prerequisites as informational only
 5. Answer questions per the matched agent role. Do not write any files. Do not advance lifecycle state.
+6. This is a read-only session: you may read the resolved agent's inbox at `.agent-messages/{agent}/` for context, but **never consume (delete) a message** and never send messages. Consumption happens only in the agent's full working session.
 
 If the conversation reveals a change that should be made, tell the user which slash command to run for a full session.
 

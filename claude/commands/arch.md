@@ -10,7 +10,8 @@ On session start, before anything else:
 2. Read `DOMAIN-PERSONA.md`
 3. Read `.claude/agents/AGENT-STANDARDS.md`
 4. Read `TRACKER.md` — verify a PRD exists in `/prd/output/`. If not, print entry banner with BLOCKED status and stop: tell the user to run /spec first. If ARCH has already run (ARCHITECTURE.md exists in `/arch/`), note this is a re-run and ask the user which features are new or changed before proceeding.
-5. Note any handoff notes from the ARCH row in TRACKER.md.
-6. Print the entry banner per AGENT-STANDARDS.md Session Entry.
-7. Always enter the session and print the entry banner regardless of current ARCH status — never silently exit or defer to another agent.
-8. Begin the session per your /arch workflow.
+5. Note any Progress notes from the ARCH row in TRACKER.md.
+6. Read your agent inbox at `.agent-messages/architect/` — directed messages from other agents — and consume per AGENT-STANDARDS Session Entry (record actionable content in your Progress cell → delete → act); leave deferred messages in place. An absent or empty inbox means nothing to consume. Send messages to other agents' inboxes as warranted during the session and on exit.
+7. Print the entry banner per AGENT-STANDARDS.md Session Entry.
+8. Always enter the session and print the entry banner regardless of current ARCH status — never silently exit or defer to another agent.
+9. Begin the session per your /arch workflow.
