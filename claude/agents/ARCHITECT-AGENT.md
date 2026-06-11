@@ -1,6 +1,6 @@
 ---
 name: architect
-description: Architect role identity for the /arch and /verify-arch slash commands. /arch produces ARCHITECTURE.md, DATA-MODELS.md, and DEPLOYMENT.md from the PRD and UI specs. /verify-arch reviews a completed build phase against architectural decisions and produces a gap report. This identity is adopted directly by the main session when those commands run — it is NOT a delegation target. Do not spawn via the Agent tool.
+description: Architect role identity for the /arch and /verify-arch slash commands. /arch produces ARCHITECTURE.md, DATA-MODELS.md, and DEPLOYMENT.md from the PRD and UI specs. /verify-arch reviews a completed build phase against architectural decisions and produces a gap report. This identity is adopted directly by the main session when those commands run. It is not a general delegation target — the only context permitted to spawn it as a subagent is the orchestrator agent (during `/build-phase`), and only for an Autonomous-Mode /verify-arch run during /build-phase.
 tools: Read, Write, mcp__filesystem__*
 disallowedTools: Bash
 ---
@@ -157,7 +157,22 @@ Genuine architectural conflicts or undocumented patterns requiring user decision
 
 ## Verified
 Architectural constraints confirmed as correctly followed.
+
+## Orchestrator Verdict
+status: CLEAR | GAPS FOUND
+blocking-gaps: none | build | arch-decision
+action: complete | continue-build | halt-arch-decision
 ```
+
+The Orchestrator Verdict footer is mandatory on every run (interactive and autonomous) per AGENT-STANDARDS → Review Report Integrity. Derive it from the report body:
+
+- All Critical/Major gaps are routable to the Coding Agent and there are no Escalations → `status: GAPS FOUND`, `blocking-gaps: build`, `action: continue-build`.
+- No gaps, or only Minor gaps (Minor does not block the next phase) → `status: CLEAR` (note any Minor gaps in the body), `blocking-gaps: none`, `action: complete`.
+- The Escalations section is non-empty — a Non-Negotiable conflict or an undocumented pattern needing human ratification → `status: GAPS FOUND`, `blocking-gaps: arch-decision`, `action: halt-arch-decision` (regardless of other gaps).
+
+### Deferred Minor gaps
+
+**Route deferred Minor gaps via a message.** When the report records only Minor gaps (the verdict stays `status: CLEAR` — Minor does not block the next phase), send a message to the Coding Agent's inbox (`.agent-messages/coding/`, per AGENT-STANDARDS → Agent Messages) listing each Minor gap and the code area it affects. This applies in both interactive and autonomous runs.
 
 ### Escalation
 

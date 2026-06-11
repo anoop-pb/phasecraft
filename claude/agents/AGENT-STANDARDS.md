@@ -166,6 +166,31 @@ After printing the handoff summary, tell the user: "Run `/resume` to pick up whe
 
 ---
 
+## Autonomous Mode (orchestrated sessions)
+
+Normally every agent runs *interactively*: it proposes before writing, asks when inputs are ambiguous, and waits for a human to confirm and to signal session close. **Autonomous Mode** is the exception. The orchestrator agent (`/build-phase`) spawns the Coding, Architect, and QA agents as bounded workers (via the Agent tool) to run a phase's build → verify loop without a human present. When — and only when — your task prompt explicitly states you are running in Autonomous Mode, the rules below override the interactive defaults. No other path enables Autonomous Mode; if your task prompt does not say so, you are interactive.
+
+**What autonomy changes:**
+
+- **No confirmation or proposal gates.** Do not propose-then-wait, do not ask the user to confirm features, do not wait for a "done" signal. Run your workflow to completion against the best available inputs within your scope. The task prompt's scope is the session boundary.
+- **Never solicit human input.** Any point where you would normally stop and ask the human becomes a **clean HALT**: stop, write your normal artifacts and a verdict, and return control to the orchestrator with a reason code. Never hang waiting for input that will not come.
+- **Suppress sequencing chatter.** Do not propose a commit message and do not tell the user to "run /verify…" or any next command — the orchestrator owns sequencing and the human-facing summary. Keep your in-fork output compact.
+
+**What autonomy does NOT change.** Autonomy removes *human gates*, not *discipline*. All file-access boundaries, role boundaries, scope limits, Non-Negotiables, Review Report Integrity, and incremental `Progress` writes still apply exactly as in interactive mode. Normal Session Entry also still applies — a spawned worker reads its `Progress` cell, consumes its inbox and runs its own Prerequisites check as usual. You still write every artifact you normally would (code, `test-results-phase-{N}.txt`, versioned review reports, your TRACKER columns, etc.).
+
+**Halt reason codes.** Map each "stop and ask the human" condition to one of these, and return it as your verdict's action/blocker:
+
+| Condition (would normally ask the human) | Halt code |
+|------------------------------------------|-----------|
+| Requirement/spec ambiguous; test spec missing or contradictory; a QA gap routes to the Product Agent | `halt-spec` |
+| ARCHITECTURE.md silent on a non-local decision; a Non-Negotiable conflict; an Architect escalation | `halt-arch-decision` |
+| Your own Prerequisites are not met — a required upstream artifact is missing | `halt-blocker` (name the missing artifact and the command that produces it) |
+| Tests still failing after the internal iteration cap; any hard technical blocker | `halt-blocker` |
+
+**Verdict return.** End every Autonomous-Mode run by writing your verdict to its durable artifact AND printing it as your final output. The orchestrator reads the verdict **from disk** — only your final summary returns to it, and that summary's wording is not guaranteed — so the file is the source of truth. Verify agents write the `## Orchestrator Verdict` footer into the review report; the Coding Agent writes the `## Build Verdict` block into `/.agentic-reviews/build/build-verdict-phase-{N}.md` overwriting it on each build (it is a transient control signal read immediately, like test-results-phase-{N}.txt — not a versioned audit artifact). Decisions that need a human (`halt-spec`, `halt-arch-decision`) are surfaced by the orchestrator to the human at the phase boundary — you do not resolve them and you do not cross role boundaries to work around them.
+
+---
+
 ## Output Audience
 
 **AI agents and code/image generation tools are the primary consumers of all outputs produced by this framework.** Write with that audience in mind first.
@@ -201,6 +226,8 @@ When invoked via `/ask [agent]`, you are in a read-only consultation session.
 **A revised verdict is a new run.** If any part of a verdict is revisited after the report has been written — for any reason, at any time — write the revision to the next run number rather than editing the prior report.
 
 **The latest run is self-sufficient.** Downstream agents read only the highest-numbered run. Any gap still unresolved at write time must appear in the current run's gap table.
+
+**Every review report ends with an Orchestrator Verdict footer.** Both the Architect (`/verify-arch`) and QA (`/verify-qa`) review reports must close with the machine-readable `## Orchestrator Verdict` block defined in their agent MDs (`status`, `blocking-gaps`, `action`). This footer is mandatory in both interactive and autonomous runs — it is the deterministic signal the orchestrator parses, and it gives a human the verdict at a glance. The footer must agree with the report's `## Status` line and gap routing.
 
 ---
 

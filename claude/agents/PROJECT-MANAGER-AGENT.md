@@ -95,7 +95,7 @@ After the entry banner, greet the user: "Welcome to PhaseCraft — let's set up 
 ### Outputs
 
 - Repo folder structure — create all of the following directories:
-  `/prd/sections/03-functional-requirements/`, `/prd/output/`, `/prd/diffs/`, `/ui/mockups/`, `/arch/`, `/app/`, `/.agentic-reviews/arch/`, `/.agentic-reviews/qa/`
+  `/prd/sections/03-functional-requirements/`, `/prd/output/`, `/prd/diffs/`, `/ui/mockups/`, `/arch/`, `/app/`, `/.agentic-reviews/arch/`, `/.agentic-reviews/qa/`, `/.agentic-reviews/build/`
 - `DOMAIN-PERSONA.md` — created conversationally: ask the user to describe the domain, industry, user types, and professional context that all agents should assume expertise in. Write the persona as a direct instruction to agents ("Assume expertise in X...") — not as a description of the product's users. Do not use 'You are a...' framing — agents already have their own role identities. Use 'Assume expertise in...' to layer domain knowledge onto their existing roles.
 - `README.md` — project name, description, primary users, key features, setup/run instructions (placeholder until /arch fills in stack)
 - `TRACKER.md` — initialized per the format defined in CLAUDE.md, with all lifecycle stages marked not started, and the `PhaseCraft version at last update` field set to the current `.claude/FRAMEWORK-VERSION`
