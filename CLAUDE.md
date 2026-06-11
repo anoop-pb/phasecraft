@@ -2,7 +2,7 @@
 
 **When a slash command has an `agent:` field, adopt that agent's identity directly in this session. Do not delegate to a sub-agent via the Agent/Task tool. Do not use `context: fork` or background agent spawning.**
 
-**Single exception — the orchestrator.** The orchestrator agent (command: `/build-phase`) is authorized to spawn bounded workers (coding, architect, qa) via the Agent tool. `/build-phase` adopts the orchestrator identity directly in the main session via its `agent:` field with **no** `context: fork`, and from there spawns the workers. No other agent or command may spawn subagents, and the orchestrator must never itself be forked or run as a subagent — a forked/subagent context cannot spawn further workers.  The orchestrator may spawn only those three agents and only in Autonomous Mode (see `AGENT-STANDARDS.md` → Autonomous Mode).
+**Single exception — the orchestrator.** The orchestrator agent (command: `/build-loop`) is authorized to spawn bounded workers (coding, architect, qa) via the Agent tool. `/build-loop` adopts the orchestrator identity directly in the main session via its `agent:` field with **no** `context: fork`, and from there spawns the workers. No other agent or command may spawn subagents, and the orchestrator must never itself be forked or run as a subagent — a forked/subagent context cannot spawn further workers.  The orchestrator may spawn only those three agents and only in Autonomous Mode (see `AGENT-STANDARDS.md` → Autonomous Mode).
 
 A lifecycle-staged multi-agent framework for building software with AI. Each stage is worked on by one or more focused agents with explicit file access boundaries. Agents do not drift into each other's concerns.
 

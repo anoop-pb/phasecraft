@@ -1,6 +1,6 @@
 ---
 name: coding
-description: Coder role identity for the /build slash command. /build phase-N implements exactly the features listed in a phase block, writes and runs tests, and iterates until all tests pass. Also used to address gaps from arch or QA review reports after a phase build. This identity is adopted directly by the main session when the command runs. It is not a general delegation target — the only context permitted to spawn it as a subagent is the orchestrator agent (during `/build-phase`), and only for an Autonomous-Mode build or fix-build run during /build-phase.
+description: Coder role identity for the /build slash command. /build phase-N implements exactly the features listed in a phase block, writes and runs tests, and iterates until all tests pass. Also used to address gaps from arch or QA review reports after a phase build. This identity is adopted directly by the main session when the command runs. It is not a general delegation target — the only context permitted to spawn it as a subagent is the orchestrator agent (during `/build-loop`), and only for an Autonomous-Mode build or fix-build run during /build-loop.
 tools: Read, Write, Bash, mcp__filesystem__*
 ---
 
@@ -205,7 +205,7 @@ For large implementation tasks within a phase:
 
 ## Autonomous Mode (spawned by the orchestrator)
 
-When your task prompt states you are running in **Autonomous Mode** (only the orchestrator's `/build-phase` does this), follow AGENT-STANDARDS → Autonomous Mode: do the build (or a fix-build against the latest gap reports) to completion with no confirmation gates. Every place in the workflow above where you would normally *stop and ask the human* instead defaults to a clean HALT with a reason code; only the specific procedural gates below proceed without asking:
+When your task prompt states you are running in **Autonomous Mode** (only the orchestrator's `/build-loop` does this), follow AGENT-STANDARDS → Autonomous Mode: do the build (or a fix-build against the latest gap reports) to completion with no confirmation gates. Every place in the workflow above where you would normally *stop and ask the human* instead defaults to a clean HALT with a reason code; only the specific procedural gates below proceed without asking:
 
 - Resuming a partial build: skip the "confirm before proceeding" step — assess what exists, then implement only the remaining items.
 - Implemented-but-not-specced items found during scope alignment: leave them as-is (neither delete nor extend), record them in the verdict `notes` and mention that it is for the human operator at the phase boundary.

@@ -168,7 +168,7 @@ After printing the handoff summary, tell the user: "Run `/resume` to pick up whe
 
 ## Autonomous Mode (orchestrated sessions)
 
-Normally every agent runs *interactively*: it proposes before writing, asks when inputs are ambiguous, and waits for a human to confirm and to signal session close. **Autonomous Mode** is the exception. The orchestrator agent (`/build-phase`) spawns the Coding, Architect, and QA agents as bounded workers (via the Agent tool) to run a phase's build → verify loop without a human present. When — and only when — your task prompt explicitly states you are running in Autonomous Mode, the rules below override the interactive defaults. No other path enables Autonomous Mode; if your task prompt does not say so, you are interactive.
+Normally every agent runs *interactively*: it proposes before writing, asks when inputs are ambiguous, and waits for a human to confirm and to signal session close. **Autonomous Mode** is the exception. The orchestrator agent (`/build-loop`) spawns the Coding, Architect, and QA agents as bounded workers (via the Agent tool) to run a phase's build → verify loop without a human present. When — and only when — your task prompt explicitly states you are running in Autonomous Mode, the rules below override the interactive defaults. No other path enables Autonomous Mode; if your task prompt does not say so, you are interactive.
 
 **What autonomy changes:**
 

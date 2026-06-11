@@ -64,24 +64,24 @@ BUILD and REVIEW repeat for each phase. After each build, two independent review
 
 Both must report **CLEAR**. If gaps are found, the reports tell you exactly what to fix and which agent handles it. Review reports are immutable — each run creates a new versioned file as an audit trail.
 
-### Running a phase autonomously — `/build-phase`
+### Running a phase under controlled autonomy — `/build-loop`
 
-`/build-phase N` runs the entire build → verify-arch → verify-qa loop for one phase on its own, repeating fix-build → re-verify until both reviews are CLEAR — instead of you running `/build`, `/verify-arch`, and `/verify-qa` by hand. It is driven by a dedicated **Orchestrator** agent — the one place in PhaseCraft where spawning workers is intentional. `/build-phase` adopts the orchestrator identity directly in your session (via `agent:`, no `context: fork`, like every other PhaseCraft command), then spawns the Coding, Architect, and QA agents as bounded workers (via the Agent tool) in *Autonomous Mode*, reads the verdict each one writes to disk, and decides the next step. The orchestrator must stay in the main conversation — it is never itself forked, because a forked context cannot spawn workers.
+`/build-loop N` runs the entire build → verify-arch → verify-qa loop for one phase on its own, repeating fix-build → re-verify until both reviews are CLEAR — instead of you running `/build`, `/verify-arch`, and `/verify-qa` by hand. It is driven by a dedicated **Orchestrator** agent — the one place in PhaseCraft where spawning workers is intentional. `/build-loop` adopts the orchestrator identity directly in your session (via `agent:`, no `context: fork`, like every other PhaseCraft command), then spawns the Coding, Architect, and QA agents as bounded workers (via the Agent tool) in *Autonomous Mode*, reads the verdict each one writes to disk, and decides the next step. The orchestrator must stay in the main conversation — it is never itself forked, because a forked context cannot spawn workers.
 
-It does not remove the human gate — it **relocates** it from every step to the phase boundary. You confirm scope at entry — `/build-phase N` lists the phase's features and waits for your go-ahead before the loop starts; control returns to you at completion or at a halt, with a full audit trail (every build writes test results, every verify writes an immutable versioned report, TRACKER.md stays current). The orchestrator is a read-only controller: the workers write all artifacts and their own TRACKER columns, and the phase's `Complete` flag is reconciled by the Project Manager on the next `/resume` — exactly as in the manual flow after a CLEAR `/verify-qa`. It never commits — it prints a consolidated proposed commit message for you to review and commit.
+It does not remove the human gate — it **relocates** it from every step to the phase boundary. You confirm scope at entry — `/build-loop N` lists the phase's features and waits for your go-ahead before the loop starts; control returns to you at completion or at a halt, with a full audit trail (every build writes test results, every verify writes an immutable versioned report, TRACKER.md stays current). The orchestrator is a read-only controller: the workers write all artifacts and their own TRACKER columns, and the phase's `Complete` flag is reconciled by the Project Manager on the next `/resume` — exactly as in the manual flow after a CLEAR `/verify-qa`. It never commits — it prints a consolidated proposed commit message for you to review and commit.
 
-> **Permission mode propagates to workers.** A spawned worker inherits the session's permission mode (e.g. accept-edits or bypass) — that is expected for an autonomous run, but it means the workers will edit code under whatever mode you launched `/build-phase` in. Run it in a mode you're comfortable having apply to autonomous edits.
+> **Permission mode propagates to workers.** A spawned worker inherits the session's permission mode (e.g. accept-edits or bypass) — that is expected for an unattended run, but it means the workers will edit code under whatever mode you launched `/build-loop` in. Run it in a mode you're comfortable having apply to unattended edits.
 
 **The hard ceiling on autonomy:** the loop runs to completion only when every gap is something the Coding Agent can fix without a human decision. The first gap that needs a spec or architecture decision halts the loop and hands control back to you:
 
 | Halt | Meaning | What you do |
 |------|---------|-------------|
-| `halt-spec` | A gap needs a product/spec decision (e.g. a QA gap routed to the Product Agent) | `/spec` to resolve, then `/build-phase N` |
-| `halt-arch-decision` | An Architect escalation or Non-Negotiable conflict | `/arch` to resolve, then `/build-phase N` |
-| `halt-blocker` | Tests still failing after the build's internal retry cap, or a hard technical blocker | `/build N` interactively, then `/build-phase N` |
-| `halt-cap` | 3 build→verify cycles elapsed without both reviews CLEAR | Review the gap reports; resume `/build-phase N` |
+| `halt-spec` | A gap needs a product/spec decision (e.g. a QA gap routed to the Product Agent) | `/spec` to resolve, then `/build-loop N` |
+| `halt-arch-decision` | An Architect escalation or Non-Negotiable conflict | `/arch` to resolve, then `/build-loop N` |
+| `halt-blocker` | Tests still failing after the build's internal retry cap, or a hard technical blocker | `/build N` interactively, then `/build-loop N` |
+| `halt-cap` | 3 build→verify cycles elapsed without both reviews CLEAR | Review the gap reports; resume `/build-loop N` |
 
-`/build-phase` operates on exactly one phase per invocation (no ranges, no auto-advance). On a clean completion it recommends `/build-phase N+1` but does not run it. The manual `/build`, `/verify-arch`, and `/verify-qa` commands remain fully available for granular control, debugging, or the conversational path — `/build-phase` composes them, it does not replace them. Use the manual commands when you want a human gate at every step; use `/build-phase` when you want the phase driven to done with the gate at the boundary.
+`/build-loop` operates on exactly one phase per invocation (no ranges, no auto-advance). On a clean completion it recommends `/build-loop N+1` but does not run it. The manual `/build`, `/verify-arch`, and `/verify-qa` commands remain fully available for granular control, debugging, or the conversational path — `/build-loop` composes them, it does not replace them. Use the manual commands when you want a human gate at every step; use `/build-loop` when you want the phase driven to done with the gate at the boundary.
 
 ### Dependencies between stages
 
@@ -186,7 +186,7 @@ When both reviews are **CLEAR** → move to `/build 2` and repeat.
 
 ---
 
-**`/build-phase {phase-number}`** — The autonomous alternative to the three steps above. Runs build → verify-arch → verify-qa for the phase and loops fix-build → re-verify until both reviews are CLEAR, routing Coding-Agent-fixable gaps itself. It halts and hands control back to you only when a gap needs a spec or architecture decision, when a build is technically blocked, or after 3 cycles. Use it when you want the phase driven to done with the human gate at the phase boundary instead of at every step; use the manual `/build` + `/verify-*` commands when you want to gate each step yourself. See [Running a phase autonomously](#running-a-phase-autonomously--build-phase).
+**`/build-loop {phase-number}`** — The controlled-autonomy alternative to the three steps above. Runs build → verify-arch → verify-qa for the phase and loops fix-build → re-verify until both reviews are CLEAR, routing Coding-Agent-fixable gaps itself. It halts and hands control back to you only when a gap needs a spec or architecture decision, when a build is technically blocked, or after 3 cycles. Use it when you want the phase driven to done with the human gate at the phase boundary instead of at every step; use the manual `/build` + `/verify-*` commands when you want to gate each step yourself. See [Running a phase under controlled autonomy](#running-a-phase-under-controlled-autonomy--build-loop).
 
 ---
 
@@ -236,7 +236,7 @@ PRD versions get a minor bump (+0.1) for modifications to existing features and 
 | `/ui` | UI Agent | Personas, UI/UX spec, conversational interface |
 | `/arch` | Architect Agent | ARCHITECTURE.md, DATA-MODELS.md, DEPLOYMENT.md |
 | `/build {phase-number}` | Coding Agent | Code + tests for phase N |
-| `/build-phase {phase-number}` | Orchestrator | Autonomous build → verify loop for phase N (spawns coding/architect/qa) |
+| `/build-loop {phase-number}` | Orchestrator | Controlled-autonomy build → verify loop for phase N (spawns coding/architect/qa) |
 | `/verify-arch {phase-number}` | Architect Agent | Architecture gap report |
 | `/verify-qa {phase-number}` | QA Agent | Test coverage gap report |
 | `/ask [agent]` | Named agent (read-only) | Answers only; no file writes |
@@ -262,7 +262,7 @@ Claude Code is powerful out of the box, but on non-trivial projects it tends to 
 | **Architect Agent** | Architecture, data models, deployment; arch review | `/prd/`, `/ui/`, `/arch/`, `/app/` (review only) | `/arch/`, review reports to `/.agentic-reviews/arch` |
 | **Coding Agent** | Implementation, tests | Everywhere | `/app/`, test results |
 | **QA Agent** | Test coverage audit | `/prd/`, `/app/tests/`, test results | Review reports to `/.agentic-reviews/qa` |  
-| **Orchestrator** *(runs in the main session via `/build-phase`; never forked)* | Drives one phase's autonomous build → verify loop; spawns coding/architect/qa | Everywhere (read) | Nothing — read-only controller. Workers write all artifacts; completion is reconciled by the Project Manager on `/resume`. |  
+| **Orchestrator** *(runs in the main session via `/build-loop`; never forked)* | Drives one phase's controlled-autonomy build → verify loop; spawns coding/architect/qa | Everywhere (read) | Nothing — read-only controller. Workers write all artifacts; completion is reconciled by the Project Manager on `/resume`. |  
 
 In addition, all agents write status to TRACKER.md, and may send messages to any agent's inbox and consume messages from their own (`.agent-messages/`).  
 NOTE: `/` here represents project root.
@@ -288,7 +288,7 @@ PHASES.md                    ← phase scope and boundaries; generated by /plan
     ARCHITECT-AGENT.md       ← /arch, /verify-arch
     CODING-AGENT.md          ← /build
     QA-AGENT.md              ← /verify-qa
-    ORCHESTRATOR-AGENT.md    ← /build-phase (controller; adopted in main session, spawns coding/architect/qa)
+    ORCHESTRATOR-AGENT.md    ← /build-loop (controller; adopted in main session, spawns coding/architect/qa)
   commands/                  ← slash command definitions
 
 prd/                         ← generated by /spec
@@ -347,7 +347,7 @@ Agent sessions run directly — the user types a slash command and talks directl
 
 **Design decision:** Commands use the `agent:` frontmatter field (without `context: fork`) because PhaseCraft agents are conversational — the user interacts directly with the agent for the full session. `context: fork` would run the agent as a delegated task, preventing direct conversation. The `agent:` field loads the agent MD as the system prompt while the command file serves as the task prompt, and CLAUDE.md is auto-loaded as universal context. AGENT-STANDARDS.md is read by all agents.
 
-**The one deliberate exception is the Orchestrator (`/build-phase`).** It uses the same `agent:`-without-`context: fork` convention as every other command — adopted directly in the main session — but its purpose *is* to delegate: from the main session it spawns the Coding, Architect, and QA agents via the **Agent tool**, each in Autonomous Mode. It must stay in the main conversation; it is never itself forked, because a forked/subagent context cannot spawn further workers (which would break the loop). Spawning is quarantined to this single command and these three targets — the command's `allowed-tools` is `Agent(coding), Agent(architect), Agent(qa)`, and CLAUDE.md authorizes it there and nowhere else — so the conversational agents are still protected from accidental forking. (Each worker runs with its own declared tools, so the Coding worker keeps Bash and the verify workers do not.)
+**The one deliberate exception is the Orchestrator (`/build-loop`).** It uses the same `agent:`-without-`context: fork` convention as every other command — adopted directly in the main session — but its purpose *is* to delegate: from the main session it spawns the Coding, Architect, and QA agents via the **Agent tool**, each in Autonomous Mode. It must stay in the main conversation; it is never itself forked, because a forked/subagent context cannot spawn further workers (which would break the loop). Spawning is quarantined to this single command and these three targets — the command's `allowed-tools` is `Agent(coding), Agent(architect), Agent(qa)`, and CLAUDE.md authorizes it there and nowhere else — so the conversational agents are still protected from accidental forking. (Each worker runs with its own declared tools, so the Coding worker keeps Bash and the verify workers do not.)
 
 ### Extending the framework
 
@@ -371,7 +371,7 @@ PhaseCraft does not enforce a model per command — choose based on your account
 | `/build` | Sonnet | Code generation; quality driven by spec and arch inputs |
 | `/verify-arch`, `/verify-qa` | Opus | Gap detection benefits from careful reasoning |
 | `/ask` | Sonnet | Conversational Q&A |
-| `/build-phase` | Opus | Runs build + both verifies + retries in one session; gap detection benefits from reasoning depth, and it is the most token-heavy command — budget accordingly |
+| `/build-loop` | Opus | Runs build + both verifies + retries in one session; gap detection benefits from reasoning depth, and it is the most token-heavy command — budget accordingly |
 
 When in doubt, use Sonnet for speed and cost, Opus when the output has significant downstream consequences.
 
@@ -394,7 +394,7 @@ Create `CODING-STANDARDS.md` at project root with your project-specific implemen
 
 Copy new agent MDs into `.claude/agents/`, command MDs into `.claude/commands/`, `CLAUDE.md` into the project root, and `FRAMEWORK-VERSION` into `.claude/`. All agents pick up changes automatically on their next invocation. Restarting Claude Desktop is recommended. Existing review reports are unaffected.
 
-**Upgrading from v0.4.x to v0.5.0.** v0.5.0 adds the Orchestrator agent and the `/build-phase` command for autonomous per-phase build → verify loops. Migration is drop-in. No PRD, phase, code, or review changes are needed, and existing reports are unaffected. The next review reports written under v0.5.0 will carry the new `## Orchestrator Verdict` footer; older reports without it remain valid for manual runs.
+**Upgrading from v0.4.x to v0.5.0.** v0.5.0 adds the Orchestrator agent and the `/build-loop` command for controlled-autonomy per-phase build → verify loops. Migration is drop-in. No PRD, phase, code, or review changes are needed, and existing reports are unaffected. The next review reports written under v0.5.0 will carry the new `## Orchestrator Verdict` footer; older reports without it remain valid for manual runs.
 
 **Upgrading from v0.3.x to v0.4.0.** v0.4.0 splits state from communication: TRACKER.md becomes state-only with a per-row `Progress` column, and directed agent-to-agent context moves to a `.agent-messages/` inbox layer. Migration is nearly automatic — the next full session normalizes the legacy `Handoff notes` column to `Progress` (existing content is preserved as valid in-flight context) and stamps `PhaseCraft version at last update` in TRACKER.md. No PRD, phase, code, or review changes are needed.
 
@@ -416,4 +416,4 @@ Occasionally, slash commands with some models may trigger delegation to the agen
 
 Nevertheless if and when you face this problem, you will not see the session entry banner (which has the correct agent name sandwiched between ____ horizontal lines). In such a case, try starting a new session and running the command again, or use a different model.
 
-**This warning does not apply to `/build-phase`.** That command is *supposed* to delegate — the Orchestrator runs in your session (you will see its entry banner) and spawns the build/verify workers via the Agent tool on purpose. It uses the `agent:` convention like other commands, so it is subject to the same occasional background-spawn issue above — but for the orchestrator that is functionally fatal (a spawned orchestrator cannot spawn its workers), not just cosmetic. If `/build-phase` ever fails to spawn workers, re-run, preferably on Sonnet. Workers running in Autonomous Mode intentionally suppress the usual confirmation gates and chatter; that is expected behaviour, not the accidental-delegation bug.
+**This warning does not apply to `/build-loop`.** That command is *supposed* to delegate — the Orchestrator runs in your session (you will see its entry banner) and spawns the build/verify workers via the Agent tool on purpose. It uses the `agent:` convention like other commands, so it is subject to the same occasional background-spawn issue above — but for the orchestrator that is functionally fatal (a spawned orchestrator cannot spawn its workers), not just cosmetic. If `/build-loop` ever fails to spawn workers, re-run, preferably on Sonnet. Workers running in Autonomous Mode intentionally suppress the usual confirmation gates and chatter; that is expected behaviour, not the accidental-delegation bug.
