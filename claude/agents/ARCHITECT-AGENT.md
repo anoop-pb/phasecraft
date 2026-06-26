@@ -53,7 +53,9 @@ Conversational — read inputs, ask questions, propose decisions, debate with us
 
 1. Read `DOMAIN-PERSONA.md` and adopt domain expertise for the session
 2. Read latest PRD from `/prd/output/`
-3. If this is a re-run (ARCHITECTURE.md already exists in `/arch/`): scan `/prd/diffs/` for diff files and read the latest (`DIFF-v{old}-to-v{new}.md`, highest version) to understand what changed since the last arch run. If the latest PRD version has no corresponding diff file, stop and tell the user to run `/spec` to generate the required diff — do not assume that whichever diff is present in the folder is current.
+3. If this is a re-run (ARCHITECTURE.md already exists in `/arch/`): scan `/prd/diffs/` for diff files (`DIFF-v*`) and patch changelogs (`PATCH-v*`) since the last arch run.
+   - **If only `PATCH-v*` files exist (no new `DIFF-v*`):** Patch bumps are clarifications — no architectural reassessment needed. Note this and proceed without re-evaluating architecture.
+   - **If a `DIFF-v*` file exists:** Read the new diffs upto the latest diff (`DIFF-v{old}-to-v{new}.md`, highest version) since the last arch run to understand what changed. If the latest PRD version has a minor or major bump and no corresponding diff file, stop and tell the user to run `/spec` to generate the required diff — do not assume that whichever diff is present in the folder is current.
 4. Read `/ui/` specs if they exist
 5. Ask questions to clarify non-obvious technical decisions such as:
    - Hosting and deployment constraints

@@ -85,7 +85,7 @@ PhaseCraft version at last update: —
 
 | Column | Valid states |
 |--------|-------------|
-| PRD version | `—` → `v{X.Y}` (set by the agent that last worked on this phase — Coding Agent on build, Architect Agent on arch review, QA Agent on QA review) |
+| PRD version | `—` → `v{X.Y}` or `v{X.Y.Z}` (set by the agent that last worked on this phase — Coding Agent on build, Architect Agent on arch review, QA Agent on QA review). A patch the phase has picked up **is** recorded as `v{X.Y.Z}` for provenance (so verified state never silently predates a clarification). The scoping anchor remains the base minor: for all drift, rework, and equivalence purposes `v{X.Y.Z}` is treated as `v{X.Y}`. |
 | Build | `not started` → `in progress` → `complete` |
 | Arch Review | `—` (not run) → `run-{R} CLEAR` or `run-{R} GAPS FOUND` |
 | QA Review | `—` (not run) → `run-{R} CLEAR` or `run-{R} GAPS FOUND` |
@@ -156,7 +156,9 @@ Prose message to the receiving agent.
 
 ## Phase Rework Policy After Spec Changes
 
-When a spec change affects multiple phases, these rules determine impact:
+When a spec change affects phases, these rules determine impact:
+
+**Patch bumps (clarifications) do not trigger rework — with one carve-out for completed phases.** A patch version bump (`v{X.Y.Z}`) is a clarification of existing language — no new or changed behavior or scope (as per the Product Agent's patch-eligibility test). It triggers no reassessment of any **in-progress or pending** phase: an in-progress phase picks the clarification up on its next `/build` (which records `v{X.Y.Z}` in its PRD version column), and a pending phase reads the clarified sections when it is first built. **Exception:** if a clarified section maps to a **completed** phase, the Coding Agent's current-phase scope cannot pick it up, so `/plan` detects this on its next run it scans the `PATCH-v*` changelogs, maps clarified sections to phases via PHASES.md, and adds a corrective item to the next pending or in-progress phase — the same forward-only rule completed phases follow for any spec change. This is the only downstream action a patch produces.
 
 **Completed phases** (both reviews CLEAR): Never reopened. If a spec change makes a completed phase's output incorrect, the fix is forward-only — add a corrective item to the next pending phase.
 

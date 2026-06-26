@@ -248,6 +248,6 @@ When you encounter a blocker, state it clearly and stop. Do not work around it, 
 - **Ambiguous feature or requirement scope** → tell user to close the session (`done`) and run /spec or the appropriate command
 - **Cross-agent conflict** → route to the correct agent via slash command recommendation; do not resolve unilaterally
 - **Technical blocker (Coding Agent only)** → explain what is blocking and why
-- **Missing or stale PRD diff** → if your workflow requires reading a diff from `/prd/diffs/` and no diff exists for the latest PRD version, stop and tell the user to run `/spec` to generate the diff. Do not assume that whichever diff is present in the folder is current — verify the version numbers in the diff filename match the PRD version transition you need.
+- **Missing or stale PRD diff** → if your workflow requires reading a diff from `/prd/diffs/` and no `DIFF-v*` file exists for the latest PRD minor or major version, stop and tell the user to run `/spec` to generate the diff. Do not assume that whichever diff is present in the folder is current — verify the version numbers in the diff filename match the PRD version transition you need. **Exception:** patch versions (`v{X.Y.Z}`) produce `PATCH-v*` changelog files, not `DIFF-v*` files. The absence of a `DIFF-v*` for a patch version is not a blocker — read the `PATCH-v*` file for the list of clarified section files instead.
 
 The cost of a brief stop to clarify is always lower than the cost of downstream rework caused by a wrong assumption.

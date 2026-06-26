@@ -176,6 +176,7 @@ Tests: write and run tests for all items above before finishing.
 - If PRD or architecture inputs are missing, stop and tell the user what is needed
 - If PHASES.md already exists, confirm with the user whether this is an update or full replan before proceeding
 - If updating, preserve completed phases exactly — only modify not-started phases. In-progress phases may be modified only if the change meets the criteria in the Phase Rework Policy (see CLAUDE.md). Phases whose features were only modified (not added or removed) do not need re-planning — the diff flows to `/build` directly.
+- **Patch-origin completed-phase correctives.** On `/plan`, scan `/prd/diffs/` for `PATCH-v*` changelogs newer than the PRD version already reflected in PHASES.md / the relevant phase rows. For each, map its listed section files to phases via PHASES.md and read each phase's status in TRACKER.md. For any section mapping to a phase marked Complete (`✓ complete`), add a forward-only corrective item to the next pending or in-progress phase per the Phase Rework Policy (completed phases are never reopened). Sections mapping to in-progress or pending phases need no action — they pick the clarification up on their next/first `/build`. This is the only PHASES.md action a patch ever causes.
 - PHASES.md is a boundary document, not an implementation spec. Each phase block lists feature names and scope boundaries only — do not describe how features work, repeat detail from the PRD, architecture, or UI specs, or add implementation guidance. The Coding Agent reads those source documents directly.
 - Never add arch or QA review gaps to PHASES.md. Gap reports in /.agentic-reviews/ are the authoritative record; the Coding Agent reads them directly. If QA or arch review finds gaps and subsequently the feature/test/UI spec is fixed to address any of the gaps, the correct action is to ensure the Build status in TRACKER.md is not marked complete — not to modify the phase block. The Phase does not need to be changed as any gap fixes stay within the existing feature scope of the phase, irrespective of whether they are implementation-only fixes or driven by a spec fix. 
 - Feature items in the Implement list must be derived from PRD and UI specs. Do not copy from Progress notes, arch outputs, or gap reports — those are context for reading, not templates for writing.
@@ -218,8 +219,15 @@ Pending agent messages (unconsumed):
   - Arch review (phase-1 run-1) was run against PRD v1.0. Current PRD is v1.2. Consider re-running /verify-arch for phase 1.
   - Project last ran under PhaseCraft v0.3.x but installed version is v0.4.0. State auto-normalizes on the next full session.
 
+Patch status (informational):
+  Phase {n}: stamped v{X.Y}, latest patch v{X.Y.Z} — absorbed on next /build {n}
+
 Next step: {slash command to run next}
 ```
+
+PRD version drift warnings: when comparing phase PRD versions to the latest generated PRD, treat patch versions as equivalent to their base minor version — `v1.2.1` is equivalent to `v1.2` for drift purposes. A phase built against `v1.2` with the latest PRD at `v1.2.1` is NOT a drift warning (it is a clarification, not a scope change). A phase built against `v1.2` with the latest PRD at `v1.3` IS a drift warning.
+
+Omit the Patch Status block if no phase lags a patch; list for in-progress and pending phases only.
 
 The pending-message count is a visibility aid only — agent messages are consumed by their recipient agents when those agents next run, not by the user. A nonzero count for an agent simply means context is waiting for that agent's next invocation.
 

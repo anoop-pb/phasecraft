@@ -113,6 +113,7 @@ Any failure that is not surfaced to the user and not covered in the test spec is
     PRD-SUMMARY-v1.1.md
   /diffs/
     DIFF-v1.0-to-v1.1.md
+    PATCH-v1.1.1.md
 ```
 
 **File organization:**
@@ -196,8 +197,13 @@ NFR items must be specific and measurable. "The system should be fast" is not an
 
 ## PRD Versioning
 
+- Patch bump (+0.0.1): clarification of existing language only — no new or changed acceptance criteria, user flows, or feature behavior (adding test coverage for behavior the feature spec already implies is still a clarification). Disambiguation so that the requirement is unambiguous, not a change to intended behavior or scope. `v1.2` is equivalent to `v1.2.0`; `v1.2.1` supersedes `v1.2`.
 - Minor bump (+0.1): modifications to existing features
 - Major bump (+1.0): new features or sections added
+
+**Patch-eligibility test.** A change is patch-eligible only if it changes no acceptance criterion, user flow, or existing test-spec assertion — it only disambiguates wording or adds coverage for behavior the feature spec already implies. Resolving a contradiction (the spec asserted two incompatible things) always forces a behavior choice and is therefore minor, never patch. If correct behavior must change, it is a minor bump.
+
+When proposing a version bump, state whether it is a patch, minor, or major and why (cite the test above for patch-vs-minor). The user confirms the classification.
 
 Every PRD includes version number, generation date, and git tag reference in the header.
 
@@ -205,7 +211,7 @@ Every PRD includes version number, generation date, and git tag reference in the
 
 ## Generated PRD Format
 
-Output: `/prd/output/PRD-v{X.Y}.md`
+Output: `/prd/output/PRD-v{X.Y}.md` or `/prd/output/PRD-v{X.Y.Z}.md` (patch versions include the patch number)
 
 Structure:
 1. Header (version, date, git tag)
@@ -243,6 +249,26 @@ Keep entries to a single sentence each — no multi-sentence descriptions, no pr
 6. Regenerate PRD and PRD summary only after user confirmation
 7. Generate a diff from the previous PRD version to the new one. If TRACKER.md shows ARCH stage as complete or in progress, or if /build has run for any phase, also tell the user: "PHASES.md may need updating — run /plan to reassign phases before /build."
 
+### Clarify Existing Feature
+1. Identify the ambiguity — confirm with the user that this is a pure clarification per the Patch-eligibility test. If it fails the test, classify as minor and run the Update Existing Feature workflow instead.
+2. Update the relevant section file(s) in `/prd/sections/`
+3. Confirm with the user to do a Patch version bump
+4. Regenerate PRD and PRD summary only after user confirmation
+5. Write a patch changelog to `/prd/diffs/PATCH-v{X.Y.Z}.md` listing each section file touched and a one-line summary of what was clarified. This is not a before/after diff — it is a pointer to the changed sections. Format:
+
+```
+# Patch Changelog — v{X.Y.Z}
+Date: {date}
+Previous version: v{X.Y} or v{X.Y.Z-1}
+
+| Section file | Clarification |
+|--------------|---------------|
+| 03-functional-requirements/04-chat.md | Reworded "recent messages" to state the already-implemented 50-message window |
+```
+
+6. **No downstream notification.** Writing the `PATCH-v*` changelog (step 5) is the only downstream action. `/plan` detects and routes any completed-phase impact on its next run by scanning the `PATCH-v*` changelogs itself.
+7. Propose a commit message
+
 ### Update Existing Feature
 1. Run per-feature workflow
 2. Run cross-feature consistency check
@@ -266,11 +292,11 @@ A diff is required whenever TRACKER.md shows ARCH stage as complete or in progre
 
 ### Handle Upstream Feedback
 
-When invoked to address a QA gap, scan `/.agentic-reviews/qa/` for the latest report matching `qa-review-phase-{N}-run-*.md` for the affected phase (the user will tell you which phase), read it directly, and address only rows marked "Routes to: PRODUCT AGENT":
+When invoked to address a QA gap, scan `/.agentic-reviews/qa/` for the latest report matching `qa-review-phase-{N}-run-*.md` for the affected phase (the user will tell you which phase), read it directly, and address only rows marked "Routes to: PRODUCT AGENT". Classify each via the Patch-eligibility test:
 
-- **Ambiguous requirement:** Clarify through conversation with the user, then update the feature spec
-- **Missing edge case in test spec:** Add to the test spec file
-- **Test spec contradicts feature spec:** Resolve with the user, update both feature and test files
+- **Ambiguous requirement** (clarifiable as per Patch-eligibility): clarify through conversation, update the feature spec, run as a **patch** (Clarify Existing Feature).
+- **Missing edge case in test spec** for behavior the feature spec already implies: add to the test spec file as a **patch** — it adds coverage, it does not change required behavior.
+- **Test spec contradicts feature spec**, or resolving the gap requires a new/changed behavior: this fails the Patch-eligibility test — resolve with the user, update both feature and test files, and run as a **minor** (Update Existing Feature). It is not patch-eligible.
 
 After updates, regenerate the PRD, PRD summary and PRD diff after user confirmation, propose a commit message and tell the user to run `/build phase-N` to address the updated specs, then `/verify-qa phase-N` to re-run the QA review.
 
