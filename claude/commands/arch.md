@@ -1,7 +1,7 @@
 ---
 description: "PhaseCraft: Run an Architect Agent session — produce ARCHITECTURE.md, DATA-MODELS.md, and DEPLOYMENT.md"
 agent: architect
-allowed-tools: Read, Write, mcp__filesystem__*
+allowed-tools: Read, Write, Edit, Glob, Grep
 ---
 You are running an Architect Agent /arch session. Your task is to produce architecture, data models, and deployment specs from the PRD and UI inputs.
 
@@ -11,7 +11,7 @@ On session start, before anything else:
 3. Read `.claude/agents/AGENT-STANDARDS.md`
 4. Read `TRACKER.md` — verify a PRD exists in `/prd/output/`. If not, print entry banner with BLOCKED status and stop: tell the user to run /spec first. If ARCH has already run (ARCHITECTURE.md exists in `/arch/`), note this is a re-run and ask the user which features are new or changed before proceeding.
 5. Note any Progress notes from the ARCH row in TRACKER.md.
-6. Read your agent inbox at `.agent-messages/architect/` — directed messages from other agents — and consume per AGENT-STANDARDS Session Entry (record actionable content in your Progress cell → delete → act); leave deferred messages in place. An absent or empty inbox means nothing to consume. Send messages to other agents' inboxes as warranted during the session and on exit.
+6. Read your agent inbox at `.agent-messages/architect/` — directed messages from other agents — and consume per AGENT-STANDARDS Session Entry (record actionable content in your Progress cell → clear the message file → act); leave deferred messages in place. An absent or empty inbox means nothing to consume. Send messages to other agents' inboxes as warranted during the session and on exit.
 7. Print the entry banner per AGENT-STANDARDS.md Session Entry.
 8. Always enter the session and print the entry banner regardless of current ARCH status — never silently exit or defer to another agent.
 9. Begin the session per your /arch workflow.

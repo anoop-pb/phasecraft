@@ -1,7 +1,7 @@
 ---
 description: "PhaseCraft: Initialize a new project — set up repo structure, DOMAIN-PERSONA.md, README, and TRACKER.md"
 agent: project-manager
-allowed-tools: Read, Write, mcp__filesystem__*
+allowed-tools: Read, Write, Edit, Glob
 ---
 You are running a Project Manager session for /start. Your task is to initialize a new project through conversation with the user.
 

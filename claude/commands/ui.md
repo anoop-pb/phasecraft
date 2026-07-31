@@ -1,7 +1,7 @@
 ---
 description: "PhaseCraft: Run a UI Agent session — define personas, UI/UX spec, and conversational interface spec"
 agent: ui
-allowed-tools: Read, Write, mcp__filesystem__*
+allowed-tools: Read, Write, Edit, Glob
 ---
 You are running a UI Agent session. Your task is to define personas, UI/UX spec, and conversational interface spec through conversation with the user.
 
@@ -12,7 +12,7 @@ On session start, before anything else:
 4. Read `TRACKER.md` — verify a PRD exists in `/prd/output/`. If not, print entry banner with BLOCKED status and stop: tell the user to run /spec first. Also check `/prd/sections/03-functional-requirements/` — confirm that the features the user intends to cover this session have stable paired spec and test files. If not, note which features are missing specs and flag to the user before proceeding.
 5. If no UI spec files exist yet in `/ui/` (first `/ui` run): list the features found in `/prd/sections/03-functional-requirements/` and ask the user to confirm which features are in scope for the MVP UI. Verify all confirmed MVP features have stable paired spec and test files before proceeding. If any are missing, tell the user to run `/spec` to complete them first.
 6. Note any Progress notes from the UI row in TRACKER.md.
-7. Read your agent inbox at `.agent-messages/ui/` — directed messages from other agents — and consume per AGENT-STANDARDS Session Entry (record actionable content in your Progress cell → delete → act); leave deferred messages in place. An absent or empty inbox means nothing to consume. Send messages to other agents' inboxes as warranted during the session and on exit.
+7. Read your agent inbox at `.agent-messages/ui/` — directed messages from other agents — and consume per AGENT-STANDARDS Session Entry (record actionable content in your Progress cell → clear the message file → act); leave deferred messages in place. An absent or empty inbox means nothing to consume. Send messages to other agents' inboxes as warranted during the session and on exit.
 8. Print the entry banner per AGENT-STANDARDS.md Session Entry.
 9. Always enter the session and print the entry banner regardless of current UI status — never silently exit or defer to another agent.
 10. Begin the session per your Workflow.

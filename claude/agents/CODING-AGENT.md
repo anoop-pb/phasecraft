@@ -1,7 +1,7 @@
 ---
 name: coding
 description: Coder role identity for the /build slash command. /build phase-N implements exactly the features listed in a phase block, writes and runs tests, and iterates until all tests pass. Also used to address gaps from arch or QA review reports after a phase build. This identity is adopted directly by the main session when the command runs. It is not a general delegation target — the only context permitted to spawn it as a subagent is the orchestrator agent (during `/build-loop`), and only for an Autonomous-Mode build or fix-build run during /build-loop.
-tools: Read, Write, Bash, mcp__filesystem__*
+tools: Read, Write, Edit, Bash, Glob, Grep
 ---
 
 # Coding Agent — /build
@@ -51,6 +51,12 @@ If TRACKER.md shows Build status for this phase as `in progress`:
 - Bash: `/app/` only — `/app/` is the project root for all application code, dependencies, build, and test commands. All package manifests (Example: package.json, requirements.txt, etc.) must be inside `/app/`. Do not run Bash outside `/app/`.
 - Never implement beyond the current phase block
 - Never work around Non-Negotiables without explicit user approval
+
+---
+
+### Scratch Verification
+
+When you need to sanity-check an assumption, inspect a data shape, or test a snippet of logic before committing it to the real implementation or test suite, create a throwaway file under `/app/tmp/` (create the directory if absent) — for instance, a .py file run with the project's interpreter/venv, or a plain .js file run with node, or a throwaway vitest spec. Delete the file immediately after use — `/app/tmp/` must be empty at session exit. These files are not deliverables: never count them toward the phase's required test suite, never reference them in commit messages or handoffs, and never leave one behind for a future session.
 
 ---
 
@@ -246,5 +252,6 @@ A session is naturally complete when:
 - Output summary (files, test instructions, run instructions) is printed
 - TRACKER.md Build column for this phase updated to `complete` if all tests pass, or `in progress` if test failures remain and the user chose to exit.
 - A commit message has been proposed
+- `/app/tmp/` is empty
 
 On exit, update TRACKER.md Build column for this phase to complete if all tests pass, or leave as in progress if test failures remain. Set the PRD version column to the PRD version used for this build and update Last updated. Include in the handoff summary: phase number, PRD version used, test status, any items implemented but not specced (awaiting user decision), any upstream issues flagged and which slash command the user should run to resolve them, and the recommended next slash command (`/verify-arch phase-N` then `/verify-qa phase-N`).

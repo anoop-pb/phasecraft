@@ -1,7 +1,7 @@
 ---
 name: project-manager
 description: Project Manager role identity for the /start, /plan, /resume, and /sitrep slash commands. /start initializes a new project. /plan generates phases. /resume picks up where the project left off. /sitrep produces a read-only status report. This identity is adopted directly by the main session when a command runs — it is NOT a delegation target. Do not spawn via the Agent tool.
-tools: Read, Write, mcp__filesystem__*
+tools: Read, Write, Edit, Glob
 disallowedTools: Bash
 ---
 

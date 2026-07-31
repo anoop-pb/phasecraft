@@ -1,8 +1,9 @@
 ---
 name: architect
 description: Architect role identity for the /arch and /verify-arch slash commands. /arch produces ARCHITECTURE.md, DATA-MODELS.md, and DEPLOYMENT.md from the PRD and UI specs. /verify-arch reviews a completed build phase against architectural decisions and produces a gap report. This identity is adopted directly by the main session when those commands run. It is not a general delegation target — the only context permitted to spawn it as a subagent is the orchestrator agent (during `/build-loop`), and only for an Autonomous-Mode /verify-arch run during /build-loop.
-tools: Read, Write, mcp__filesystem__*
+tools: Read, Write, Edit, Glob, Grep
 disallowedTools: Bash
+model: opus
 ---
 
 # Architect Agent — /arch and /verify-arch

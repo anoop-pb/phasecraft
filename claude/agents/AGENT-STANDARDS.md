@@ -30,9 +30,7 @@ BUILD and REVIEW repeat for each phase. A phase is not complete until both arch 
 
 **Never use web search tools.** All decisions must be grounded in project files, agent role and domain expertise — not in external web searches or sources outside the repository.
 
-**Use native Read and Write tools for all file operations.** These are always available and are the primary tools for reading and writing project files.
-
-MCP filesystem tools (`mcp__filesystem__read_text_file`, `mcp__filesystem__read_multiple_files`, `mcp__filesystem__list_directory`, `mcp__filesystem__write_file`, `mcp__filesystem__edit_file`) may also be available if configured. Use them when they offer a practical advantage (e.g., `read_multiple_files` for batch reads), but do not depend on them — they are supplementary, not required.
+**Use native tools for all file operations.** `Read` and `Write` are the primary tools for reading and writing project files, and are always available. `Edit` is available to agents whose role requires targeted in-place modification of an existing file (see each agent's frontmatter `tools` field) — prefer it over a full `Read`-then-`Write` round-trip when changing a small, well-defined region of a file (e.g. one TRACKER.md row, one section, an existing spec file). `Glob` finds files by name or path pattern — directory listing, existence checks, and latest-run-number or latest-version scans (e.g. the highest `arch-review-phase-{N}-run-*.md`) all use `Glob`, not a separate listing tool. `Grep` searches file contents — e.g. scanning `/prd/diffs/` for `DIFF-v*` or `PATCH-v*` markers. Use whichever of these are declared in your agent's frontmatter `tools` field; do not reach for a tool that isn't listed there.
 
 Bash is permitted only where explicitly listed under an agent's frontmatter `tools` field, and only for the purposes stated in that agent's Guardrails.
 
@@ -44,7 +42,7 @@ Bash is permitted only where explicitly listed under an agent's frontmatter `too
 
 **TRACKER.md is writable by all agents.** This overrides per-agent Write boundaries. Agents update TRACKER.md on session entry (status changes) and session exit (Progress, status, timestamps) as defined in Session Entry and Session Exit.
 
-**`.agent-messages/` is writable by all agents.** This overrides per-agent Write boundaries, exactly as TRACKER.md does — but only for two operations: **sending** (creating a new message file in any recipient's inbox) and **consuming** (deleting message files from your *own* inbox). Never edit a message file in place, never delete from another agent's inbox, and never write anything else under `.agent-messages/`. See the Agent Messages section for the full contract.
+**`.agent-messages/` is writable by all agents.** This overrides per-agent Write boundaries, exactly as TRACKER.md does — but only for two operations: **sending** (creating a new message file in any recipient's inbox) and **consuming** (clearing message files in your *own* inbox by overwriting them with empty content — see Reading and consuming). Never edit a message file's content in place before consuming it, never clear or touch another agent's inbox, and never write anything else under `.agent-messages/`. See the Agent Messages section for the full contract.
 
 **Do not do another agent's work.** If you encounter a gap, ambiguity, or decision that belongs to another agent's role, stop and route it correctly. Do not resolve it yourself.
 
@@ -66,17 +64,17 @@ To send, create one new message file in the recipient's inbox folder (creating t
 
 ### Reading and consuming
 
-On session entry, list your own inbox `.agent-messages/{your-agent-name}/` and read all pending messages in filename (timestamp) order. Reconcile them — a later message may supersede an earlier one. Then, for each message you decide to act on **this session**:
+On session entry, list your own inbox `.agent-messages/{your-agent-name}/` and read all **pending** messages in filename (timestamp) order — a message file with empty content has already been consumed and is not pending; skip it (do not reconcile it, do not count it). Reconcile the pending messages — a later one may supersede an earlier one. Then, for each pending message you decide to act on **this session**:
 
 1. Write its actionable content into your `Progress` cell in TRACKER.md (crash resilience).
-2. Delete the message file.
+2. Consume it: overwrite the message file with empty content (native `Write`, same path — no delete capability required or used).
 3. Act on it.
 
-Delete **before** acting, with `Progress` already written: this prevents a crash mid-action from causing the message to be re-read and double-processed on the next invocation, while guaranteeing nothing is lost (the in-flight content lives in `Progress`). Messages you choose **not** to act on this session are left in place — they persist for a future invocation. Deferral is bounded by your own judgment and is visible in the `/sitrep` pending-message count.
+Consume **before** acting, with `Progress` already written: this prevents a crash mid-action from causing the message to be re-read and double-processed on the next invocation, while guaranteeing nothing is lost (the in-flight content lives in `Progress`). Messages you choose **not** to act on this session are left pending (untouched) — they persist for a future invocation. Deferral is bounded by your own judgment and is visible in the `/sitrep` pending-message count.
 
-Consume only messages addressed to you. Never read or delete another agent's inbox.
+Consume only messages addressed to you. Never read, consume, or otherwise touch another agent's inbox. Never physically delete a message file — consuming means overwriting it with empty content, so a consumed message's filename (and its position in timestamp order) remains as a record that it was sent and processed; treat an empty message file as inert, not as an error or gap.
 
-**Read-only sessions never consume.** In `/ask` and `/sitrep` sessions, do not delete (consume) messages. `/sitrep` only counts pending messages; `/ask` may read the inbox for context but must leave every message in place.
+**Read-only sessions never consume.** In `/ask` and `/sitrep` sessions, do not consume (clear) messages. `/sitrep` only counts pending (non-empty) messages; `/ask` may read pending messages for context but must leave every one in place, untouched.
 
 ---
 
@@ -101,7 +99,7 @@ Each agent is responsible for its own session entry. On startup:
 2. Read `AGENT-STANDARDS.md` (this file)
 3. Read `TRACKER.md` to confirm current lifecycle state. If the `PhaseCraft version at last update` field is older than the current `.claude/FRAMEWORK-VERSION` (or absent), and the tracker still shows a `Handoff notes` column, normalize the header to `Progress` when you next write the row. Set the version field to the current framework version on your first TRACKER.md write this session.
 4. Read the `Progress` cell for your current stage or phase row, and for the preceding stage if relevant context exists. (Pre-upgrade trackers may label this column `Handoff notes` — treat it as `Progress`.)
-5. **Read your inbox** at `.agent-messages/{your-agent-name}/` per the Agent Messages section. If the folder is absent or empty, treat it as no messages — do not error or block. For each message you act on this session, follow the consume sequence (write its actionable content into your `Progress` cell, delete the file, then act). Leave messages you defer in place.
+5. **Read your inbox** at `.agent-messages/{your-agent-name}/` per the Agent Messages section. If the folder is absent or empty, treat it as no messages — do not error or block. For each pending (non-empty) message you act on this session, follow the consume sequence (write its actionable content into your `Progress` cell, overwrite the message file with empty content, then act). Leave messages you defer in place, untouched.
 6. Run prerequisite checks defined in your agent MD
 7. Read the current state of your agent's artifacts before proceeding in order to detect any prior partial work from crashed sessions. Report what already exists before starting work.
 8. Print the entry banner:
@@ -160,7 +158,7 @@ After printing the handoff summary, tell the user: "Run `/resume` to pick up whe
 
 **Conversational before generative.** All agents that produce substantive outputs (specs, architecture, UI docs, phase plans) operate conversationally first — establish intent, debate tradeoffs, get direction — before generating any files. The conversation is the work; the files are the record.
 
-**Incremental progress writes:** Do not wait until session end to update the `Progress` cell in TRACKER.md. After completing each significant unit of work, overwrite the `Progress` cell for the current stage or phase row with the latest in-flight state. This ensures that if the session ends abruptly, the next session loses at most the current unit of work. When you consume an agent message, the actionable content of that message is written here as part of the consume sequence (see Agent Messages) before the message file is deleted.
+**Incremental progress writes:** Do not wait until session end to update the `Progress` cell in TRACKER.md. After completing each significant unit of work, overwrite the `Progress` cell for the current stage or phase row with the latest in-flight state. This ensures that if the session ends abruptly, the next session loses at most the current unit of work. When you consume an agent message, the actionable content of that message is written here as part of the consume sequence (see Agent Messages) before the message file is overwritten with empty content.
 
 **When recommending a slash command**, always remind the user to run it in a new Claude Code session — not in the current session.
 

@@ -1,7 +1,7 @@
 ---
 description: "PhaseCraft: Report current project state — lifecycle status, phase status, warnings, next step"
 agent: project-manager
-allowed-tools: Read, mcp__filesystem__read_text_file, mcp__filesystem__read_multiple_files, mcp__filesystem__list_directory
+allowed-tools: Read, Glob
 ---
 You are running a Project Manager session for /sitrep. Your task is to produce a read-only status report.
 

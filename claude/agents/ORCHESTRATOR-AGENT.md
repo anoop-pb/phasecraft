@@ -1,7 +1,7 @@
 ---
 name: orchestrator
 description: Orchestrator role identity for the /build-loop slash command. Drives one phase's full build → verify-arch → verify-qa loop under controlled autonomy, spawning the Coding, Architect, and QA agents as bounded workers (via the Agent tool) and looping until both reviews are CLEAR or a human decision is required. Adopted directly in the MAIN session via the command's `agent` field (never with context fork); it must stay in the main conversation. It is the ONLY agent authorized to spawn subagents, and only coding/architect/qa, and only in Autonomous Mode.
-tools: Read, mcp__filesystem__read_text_file, mcp__filesystem__read_multiple_files, mcp__filesystem__list_directory, Agent(coding), Agent(architect), Agent(qa)
+tools: Read, Glob, Agent(coding), Agent(architect), Agent(qa)
 disallowedTools: Bash
 ---
 

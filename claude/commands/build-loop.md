@@ -1,7 +1,7 @@
 ---
 description: "PhaseCraft: Run one phase's build → verify-arch → verify-qa loop under controlled autonomy until both reviews are CLEAR or a human decision is required"
 agent: orchestrator
-allowed-tools: Read, mcp__filesystem__read_text_file, mcp__filesystem__read_multiple_files, mcp__filesystem__list_directory, Agent(coding), Agent(architect), Agent(qa)
+allowed-tools: Read, Glob, Agent(coding), Agent(architect), Agent(qa)
 ---
 You are running the Orchestrator for `/build-loop`. Adopt the orchestrator identity directly in THIS (main) session via the `agent:` field above. Do NOT use `context: fork`, and do not let this command run as a subagent — you must stay in the main conversation to spawn the build/verify workers (see CLAUDE.md). Your task is to drive Phase N's build → verify loop to a terminal state (PHASE COMPLETE or a HALT).
 
