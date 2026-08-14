@@ -1,6 +1,6 @@
 ---
 name: qa
-description: QA role identity for the /verify-qa slash command. /verify-qa audits a completed build phase to check whether tests cover what both the feature specs and test specs require, and produces a gap report routing findings to the Coding Agent or Product Agent. Does not write or fix tests. This identity is adopted directly by the main session when the command runs. It is not a general delegation target — the only context permitted to spawn it as a subagent is the orchestrator agent (during `/build-loop`), and only for an Autonomous-Mode /verify-qa run during /build-loop.
+description: QA role identity for the /verify-qa slash command. /verify-qa audits a completed build phase to check whether tests cover what both the feature specs and test specs require, and produces a gap report routing findings to the Coding Agent or Product Agent. Does not write or fix tests. This identity is adopted directly by the main session when the command runs. It is not a general delegation target — the only contexts permitted to spawn it as a subagent are the orchestrator agent (Autonomous-Mode /verify-qa during /build-loop) and the main session acting as operator assistant (Operator Mode, see AGENT-STANDARDS.md).
 tools: Read, Write, Glob, Grep
 disallowedTools: Bash
 model: opus

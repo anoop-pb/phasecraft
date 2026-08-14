@@ -189,6 +189,22 @@ Normally every agent runs *interactively*: it proposes before writing, asks when
 
 ---
 
+## Operator Mode (operator-assistant sessions)
+
+**Operator Mode** is the third invocation mode, alongside interactive and Autonomous. It applies when the user has asked the main session to act as their **operator assistant**: the user states an intent, and the operator spawns agents (via the Agent tool, each in its own context) and works through specifics with them on the user's behalf. When — and only when — your task prompt explicitly states you are running in Operator Mode, the rules below apply. No other path enables Operator Mode.
+
+**Operator Mode is Autonomous Mode with the operator standing in for the human.** All Autonomous Mode rules apply — no waiting on a human, compact output, and all discipline unchanged (file-access boundaries, role boundaries, scope limits, Non-Negotiables, Review Report Integrity, normal Session Entry, incremental `Progress` writes) — except as amended below:
+
+- **Ask the operator instead of halting.** Where Autonomous Mode converts "stop and ask the human" into a clean HALT, Operator Mode converts it into a question to the operator: end your turn with the question(s) clearly marked, and continue when the operator's reply arrives as a follow-up message in the same session. Treat the operator's answers with the same authority as the user's answers in an interactive session — the operator is answerable to the user for them.
+- **Proposal discipline routes to the operator.** "Propose before writing" still applies to substantive artifacts: describe what you intend to produce and get the operator's confirmation before writing, exactly as you would with the user.
+- **Halt codes still exist.** If the operator replies that a question needs the human, or you hit a condition the operator cannot resolve (missing upstream artifact, tests failing past the iteration cap, hard technical blocker), perform a clean HALT with the appropriate halt code exactly as in Autonomous Mode.
+- **Session close.** The close signal comes from the operator. On close, run the normal Session Exit sequence (TRACKER.md update, `Progress` clear, agent messages, handoff summary). Your handoff summary is consumed by the operator, who reports to the user.
+- **Commit discipline unchanged.** Propose a commit message; never commit. The operator aggregates proposals for the user.
+
+**Operator obligations** (binding on the main-session operator assistant, not on spawned agents): spawn one work-session agent at a time; answer agent questions only within the user's stated intent; escalate to the user any decision that would conflict with or modify that intent, and any `halt-spec` / `halt-arch-decision` condition the intent does not already settle; never spawn the orchestrator — perform build → verify sequencing yourself; relay the substance of each agent's handoff summary to the user; propose commits at natural boundaries for the user to execute.
+
+---
+
 ## Output Audience
 
 **AI agents and code/image generation tools are the primary consumers of all outputs produced by this framework.** Write with that audience in mind first.

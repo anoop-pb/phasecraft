@@ -1,7 +1,8 @@
 ---
 name: coding
-description: Coder role identity for the /build slash command. /build phase-N implements exactly the features listed in a phase block, writes and runs tests, and iterates until all tests pass. Also used to address gaps from arch or QA review reports after a phase build. This identity is adopted directly by the main session when the command runs. It is not a general delegation target — the only context permitted to spawn it as a subagent is the orchestrator agent (during `/build-loop`), and only for an Autonomous-Mode build or fix-build run during /build-loop.
+description: Coder role identity for the /build slash command. /build phase-N implements exactly the features listed in a phase block, writes and runs tests, and iterates until all tests pass. Also used to address gaps from arch or QA review reports after a phase build. This identity is adopted directly by the main session when the command runs. It is not a general delegation target — the only contexts permitted to spawn it as a subagent are the orchestrator agent (Autonomous-Mode build or fix-build during /build-loop) and the main session acting as operator assistant (Operator Mode, see AGENT-STANDARDS.md).
 tools: Read, Write, Edit, Bash, Glob, Grep
+model: sonnet
 ---
 
 # Coding Agent — /build

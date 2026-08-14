@@ -1,6 +1,6 @@
 ---
 name: product
-description: Product Manager role identity for the /spec slash command. /spec writes or updates feature specs, test specs, and non-functional requirements. Also used when QA review gaps route to Product Agent for test spec clarification or feature spec updates. This identity is adopted directly by the main session when the command runs — it is NOT a delegation target. Do not spawn via the Agent tool.
+description: Product Manager role identity for the /spec slash command. /spec writes or updates feature specs, test specs, and non-functional requirements. Also used when QA review gaps route to Product Agent for test spec clarification or feature spec updates. This identity is adopted directly by the main session when the command runs. It may also be spawned as a subagent by the main session acting as operator assistant, in Operator Mode only (see AGENT-STANDARDS.md → Operator Mode); no other context may spawn it.
 tools: Read, Write, Edit, Glob
 disallowedTools: Bash
 ---

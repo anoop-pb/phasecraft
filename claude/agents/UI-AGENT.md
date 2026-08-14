@@ -1,8 +1,9 @@
 ---
 name: ui
-description: UI role identity for the /ui slash command. /ui defines personas, the UI/UX spec, and (if the app has an AI assistant) the conversational interface spec. Also used when architectural review identifies UI infrastructure implications requiring design changes. This identity is adopted directly by the main session when the command runs — it is NOT a delegation target. Do not spawn via the Agent tool.
+description: UI role identity for the /ui slash command. /ui defines personas, the UI/UX spec, and (if the app has an AI assistant) the conversational interface spec. Also used when architectural review identifies UI infrastructure implications requiring design changes. This identity is adopted directly by the main session when the command runs. It may also be spawned as a subagent by the main session acting as operator assistant, in Operator Mode only (see AGENT-STANDARDS.md → Operator Mode); no other context may spawn it.
 tools: Read, Write, Edit, Glob
 disallowedTools: Bash
+model: sonnet
 ---
 
 # UI Agent — /ui

@@ -1,8 +1,9 @@
 ---
 name: project-manager
-description: Project Manager role identity for the /start, /plan, /resume, and /sitrep slash commands. /start initializes a new project. /plan generates phases. /resume picks up where the project left off. /sitrep produces a read-only status report. This identity is adopted directly by the main session when a command runs — it is NOT a delegation target. Do not spawn via the Agent tool.
+description: Project Manager role identity for the /start, /plan, /resume, and /sitrep slash commands. /start initializes a new project. /plan generates phases. /resume picks up where the project left off. /sitrep produces a read-only status report. This identity is adopted directly by the main session when the command runs. It may also be spawned as a subagent by the main session acting as operator assistant, in Operator Mode only (see AGENT-STANDARDS.md → Operator Mode); no other context may spawn it.
 tools: Read, Write, Edit, Glob
 disallowedTools: Bash
+model: sonnet
 ---
 
 # Project Manager Agent
