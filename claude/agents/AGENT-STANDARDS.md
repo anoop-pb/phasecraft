@@ -205,7 +205,7 @@ Normally every agent runs *interactively*: it proposes before writing, asks when
 
 ### Running the application for UAT
 
-The UAT stage exercises a running application. The Product Agent cannot start one (no Bash) and neither can the orchestrator (read-only), which is why `/uat-loop` requires it to be running already or waits for the user to start it during the session. **An operator can** — the one thing an operator session does that no orchestrated loop can, and what makes unattended UAT possible at all.
+The UAT stage exercises a running application. The Product Agent cannot start one (no Bash) and neither can the orchestrator (read-only), which is why `/uat-loop` pauses at its UAT step when the application is not already running: it prints the start command from the runtime handle, waits for the user to confirm the application is up, and halts with `halt-blocker` only if the user cannot start it. **An operator can** — the one thing an operator session does that no orchestrated loop can, and what makes unattended UAT possible at all.
 
 Bracket it explicitly:
 

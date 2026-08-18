@@ -41,7 +41,7 @@ What you own:
 - Never invoke sub-agents
 - Never intermediate a sub-agent session
 - If prerequisites for a sub-agent command are not met, tell the user what is missing — do not run the command yourself
-- On `/resume` and `/sitrep`: if the project's version stamp predates v0.5.3 and either the TRACKER Phase Status table has no `UAT` column or PHASES.md phase blocks carry no `UAT:` line, warn explicitly that the UAT stage is not running for any phase and name `/plan` as the fix. A project that silently skips a gate it now has is worse than one that never had it — the tracker will read `✓ complete` either way.
+- On `/resume` and `/sitrep`: if the project's version stamp predates v0.6.0 and either the TRACKER Phase Status table has no `UAT` column or PHASES.md phase blocks carry no `UAT:` line, warn explicitly that the UAT stage is not running for any phase and name `/plan` as the fix. A project that silently skips a gate it now has is worse than one that never had it — the tracker will read `✓ complete` either way.
 - On `/resume` and `/sitrep`: if DOMAIN-PERSONA.md still contains placeholder or TBD text, include a warning in the output: "⚠ DOMAIN-PERSONA.md is not filled out — all agents are operating as generalists. Run `/start` to complete it before proceeding with `/spec`."
 - Always end /resume and /sitrep with a specific recommended slash command
 
@@ -184,7 +184,7 @@ UAT: applicable | N/A — [reason]
 - If PRD or architecture inputs are missing, stop and tell the user what is needed
 - If PHASES.md already exists, confirm with the user whether this is an update or full replan before proceeding
 - If updating, preserve completed phases exactly — only modify not-started phases. In-progress phases may be modified only if the change meets the criteria in the Phase Rework Policy (see CLAUDE.md). Phases whose features were only modified (not added or removed) do not need re-planning — the diff flows to `/build` directly.
-- - **UAT applicability on a re-plan.** If an incomplete phase block has no `UAT:` line (a project planned before v0.5.3), add one. Where applicability is not obvious, propose `applicable` and let the user downgrade it — an unnecessary UAT pass costs a session, a wrongly skipped one removes the last human-facing gate before completion without anyone noticing.
+- - **UAT applicability on a re-plan.** If an incomplete phase block has no `UAT:` line (a project planned before v0.6.0), add one. Where applicability is not obvious, propose `applicable` and let the user downgrade it — an unnecessary UAT pass costs a session, a wrongly skipped one removes the last human-facing gate before completion without anyone noticing.
 - **Patch-origin completed-phase correctives.** On `/plan`, scan `/prd/diffs/` for `PATCH-v*` changelogs newer than the PRD version already reflected in PHASES.md / the relevant phase rows. For each, map its listed section files to phases via PHASES.md and read each phase's status in TRACKER.md. For any section mapping to a phase marked Complete (`✓ complete`), add a forward-only corrective item to the next pending or in-progress phase per the Phase Rework Policy (completed phases are never reopened). Sections mapping to in-progress or pending phases need no action — they pick the clarification up on their next/first `/build`. This is the only PHASES.md action a patch ever causes.
 - PHASES.md is a boundary document, not an implementation spec. Each phase block lists feature names and scope boundaries only — do not describe how features work, repeat detail from the PRD, architecture, or UI specs, or add implementation guidance. The Coding Agent reads those source documents directly.
 - Never add arch or QA review gaps to PHASES.md. Gap reports in /.agentic-reviews/ are the authoritative record; the Coding Agent reads them directly. If QA or arch review finds gaps and subsequently the feature/test/UI spec is fixed to address any of the gaps, the correct action is to ensure the Build status in TRACKER.md is not marked complete — not to modify the phase block. The Phase does not need to be changed as any gap fixes stay within the existing feature scope of the phase, irrespective of whether they are implementation-only fixes or driven by a spec fix. 
@@ -224,7 +224,7 @@ Pending agent messages (unconsumed):
 
 ⚠ Warnings:
   - DOMAIN-PERSONA.md is not filled out — all agents are operating as generalists. Run /start to complete it before proceeding with /spec.
-  - Phase Status has no UAT column, or PHASES.md phase blocks have no UAT: line — this project predates v0.5.3 and the UAT stage is not running for any phase. Run /plan to set applicability; /resume adds the column.
+  - Phase Status has no UAT column, or PHASES.md phase blocks have no UAT: line — this project predates v0.6.0 and the UAT stage is not running for any phase. Run /plan to set applicability; /resume adds the column.
   - Phase 1 was built against PRD v1.0 but the PRD has since been updated to v1.2. Check whether the changes affect phase 1 — run /resume for guidance.
   - Arch review (phase-1 run-1) was run against PRD v1.0. Current PRD is v1.2. Consider re-running /verify-arch for phase 1.
   - Project last ran under PhaseCraft v0.3.x but installed version is v0.4.0. State auto-normalizes on the next full session.

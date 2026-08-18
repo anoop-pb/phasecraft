@@ -1,7 +1,7 @@
 ---
 description: "PhaseCraft: Run a Product Agent UAT session — exercise the running application for the specified phase against feature and UI specs"
 agent: product
-allowed-tools: Read, Write, Glob, Grep
+allowed-tools: Read, Write, Edit, Glob
 ---
 You are running a Product Agent /verify-uat session. Your task is to exercise the running application for the specified phase against its feature specs and UI specs, and produce a deviation report. This is agent-run UAT — human acceptance is separate and happens after your report is read.
 

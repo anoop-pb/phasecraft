@@ -78,7 +78,7 @@ Record the PRD version this architecture was generated from in the ARCHITECTURE.
 4. Key Data Flows — request → response for each major flow; the Coding Agent updates this table after any change to API routes or core lib files
 5. Key Design Patterns
 6. Integration Points — external APIs, AI models, databases, third-party services
-7. Test Strategy — for each test level this project needs (e.g. unit, integration, API/contract, end-to-end): which layers of the Folder Structure it covers, its framework or runner, and the command that runs it. State explicitly where a level is deliberately not needed. This makes test levels an architectural decision made once, rather than one each build session makes differently. Scope it to where different types of tests go and how they run; coverage of specific requirements belongs to the Product and QA Agents.
+7. Test Strategy — for each test level this project needs (e.g. unit, integration, API/contract, end-to-end): what belongs at it, which layers of the Folder Structure it covers, the directory under `/app/tests/` where its files live, its framework or runner, and the exact command that runs it. State explicitly where a level is deliberately not needed. This makes test levels an architectural decision made once, rather than one each build session makes differently. Scope it to what goes where and how it runs; coverage of specific requirements belongs to the Product and QA Agents.
 8. Non-Negotiables — decisions that must not be changed without explicit user approval; if changed, significant rework is required. Examples: ORM choice, storage abstraction boundaries, API pattern (streaming vs non-streaming), router type, auth mechanism
 
 **DATA-MODELS.md**

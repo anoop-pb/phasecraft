@@ -1,7 +1,7 @@
 ---
 description: "PhaseCraft: Run a Product Agent spec session — write or update feature specs, test specs, and NFR"
 agent: product
-allowed-tools: Read, Write, Edit, Glob
+allowed-tools: Read, Write, Edit, Glob, Grep
 ---
 You are running a Product Agent spec session. Your task is to write or update feature specs, test specs, and NFR through conversation with the user.
 

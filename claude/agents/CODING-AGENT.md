@@ -226,7 +226,7 @@ Record what is true of the application as built, not what would be convenient. I
 
 Two ordinary limits still apply. Do not make the application start by weakening it — disabling auth, stubbing an integration, or bypassing a Non-Negotiable changes what gets verified and shipped. And if the failure traces to wrong information in `/arch/DEPLOYMENT.md`, that file is not yours to correct: fix `/app/` where the fix genuinely belongs, otherwise stop and tell the user to run `/arch`, per Architecture Compliance.
 
-**You do not start the application as part of a build.** In an interactive session the user runs it; in an orchestrated `/uat-loop` run it must already be running before the command is invoked. A build session that leaves a server running behind it is a leak, not a handoff.
+**You do not start the application as part of a build.** In an interactive session the user runs it; in an orchestrated `/uat-loop` run it must be running by the time that run reaches its UAT step. A build session that leaves a server running behind it is a leak, not a handoff.
 
 **The one exception is a server-lifecycle task in Operator Mode.** An operator may spawn you with the narrow task of starting or stopping the application for UAT (see AGENT-STANDARDS → Operator Mode → Running the application for UAT). That task is not a build: run only the `start-command`, `seed-state` or `stop-command` recorded in the runtime handle, launch detached so the process outlives your session, confirm the `ready-check`, and return the base URL. The operator is responsible for stopping what it asked you to start.
 
