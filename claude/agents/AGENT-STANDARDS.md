@@ -9,7 +9,7 @@ Universal rules that apply to every agent in this framework. Read this file befo
 The development lifecycle runs in this order:
 
 ```
-INIT → SPEC → UI → ARCH → PLAN → BUILD (per phase) → REVIEW (per phase)
+INIT → SPEC → UI → ARCH → PLAN → BUILD (per phase) → REVIEW (per phase) → UAT (per phase)
 ```
 
 | Stage  | Agent            | Key Outputs                                              |
@@ -21,8 +21,9 @@ INIT → SPEC → UI → ARCH → PLAN → BUILD (per phase) → REVIEW (per pha
 | PLAN   | Project Manager  | PHASES.md, TRACKER.md                                    |
 | BUILD  | Coding Agent     | Implementation, per phase                                |
 | REVIEW | Architect + QA   | Gap reports, per phase                                   |
+| UAT    | Product Agent    | Deviation report, per phase                              |
 
-BUILD and REVIEW repeat for each phase. A phase is not complete until both arch and QA reviews are CLEAR. Stages are checkpoints, not locks — any stage can be reopened without rolling back downstream stages already underway.
+BUILD, REVIEW and UAT repeat for each phase. A phase is not complete until both arch and QA reviews are CLEAR and UAT is CLEAR or `N/A`. UAT runs last — it exercises the running application, and is only worth running against a build the automated reviews have already settled. Stages are checkpoints, not locks — any stage can be reopened without rolling back downstream stages already underway.
 
 ---
 
@@ -97,7 +98,7 @@ Each agent is responsible for its own session entry. On startup:
 
 1. Read `DOMAIN-PERSONA.md` (if your agent MD instructs it)
 2. Read `AGENT-STANDARDS.md` (this file)
-3. Read `TRACKER.md` to confirm current lifecycle state. If the `PhaseCraft version at last update` field is older than the current `.claude/FRAMEWORK-VERSION` (or absent), and the tracker still shows a `Handoff notes` column, normalize the header to `Progress` when you next write the row. Set the version field to the current framework version on your first TRACKER.md write this session.
+3. Read `TRACKER.md` to confirm current lifecycle state. If the `PhaseCraft version at last update` field is older than the current `.claude/FRAMEWORK-VERSION` (or absent), normalize the tracker when you next write to it: rename a legacy `Handoff notes` column header to `Progress` (content unchanged), and add a `UAT` column to the Phase Status table between `QA Review` and `Complete` if it is absent, setting every existing row's cell to `—`. Neither normalization changes any phase's status or reopens a completed phase. Set the version field to the current framework version on your first TRACKER.md write this session.
 4. Read the `Progress` cell for your current stage or phase row, and for the preceding stage if relevant context exists. (Pre-upgrade trackers may label this column `Handoff notes` — treat it as `Progress`.)
 5. **Read your inbox** at `.agent-messages/{your-agent-name}/` per the Agent Messages section. If the folder is absent or empty, treat it as no messages — do not error or block. For each pending (non-empty) message you act on this session, follow the consume sequence (write its actionable content into your `Progress` cell, overwrite the message file with empty content, then act). Leave messages you defer in place, untouched.
 6. Run prerequisite checks defined in your agent MD
@@ -166,7 +167,7 @@ After printing the handoff summary, tell the user: "Run `/resume` to pick up whe
 
 ## Autonomous Mode (orchestrated sessions)
 
-Normally every agent runs *interactively*: it proposes before writing, asks when inputs are ambiguous, and waits for a human to confirm and to signal session close. **Autonomous Mode** is the exception. The orchestrator agent (`/build-loop`) spawns the Coding, Architect, and QA agents as bounded workers (via the Agent tool) to run a phase's build → verify loop without a human present. When — and only when — your task prompt explicitly states you are running in Autonomous Mode, the rules below override the interactive defaults. No other path enables Autonomous Mode; if your task prompt does not say so, you are interactive.
+Normally every agent runs *interactively*: it proposes before writing, asks when inputs are ambiguous, and waits for a human to confirm and to signal session close. **Autonomous Mode** is the exception. The orchestrator agent (`/build-loop`, `/uat-loop`) spawns the Coding, Architect, QA and — for `/uat-loop` — Product agents as bounded workers (via the Agent tool) to run a phase's build → verify → UAT loop without a human present. When — and only when — your task prompt explicitly states you are running in Autonomous Mode, the rules below override the interactive defaults. No other path enables Autonomous Mode; if your task prompt does not say so, you are interactive.
 
 **What autonomy changes:**
 
@@ -184,8 +185,9 @@ Normally every agent runs *interactively*: it proposes before writing, asks when
 | ARCHITECTURE.md silent on a non-local decision; a Non-Negotiable conflict; an Architect escalation | `halt-arch-decision` |
 | Your own Prerequisites are not met — a required upstream artifact is missing | `halt-blocker` (name the missing artifact and the command that produces it) |
 | Tests still failing after the internal iteration cap; any hard technical blocker | `halt-blocker` |
+| The running application required for UAT is unreachable, or its runtime handle is missing | `halt-blocker` (name which, and the command that produces it) |
 
-**Verdict return.** End every Autonomous-Mode run by writing your verdict to its durable artifact AND printing it as your final output. The orchestrator reads the verdict **from disk** — only your final summary returns to it, and that summary's wording is not guaranteed — so the file is the source of truth. Verify agents write the `## Orchestrator Verdict` footer into the review report; the Coding Agent writes the `## Build Verdict` block into `/.agentic-reviews/build/build-verdict-phase-{N}.md` overwriting it on each build (it is a transient control signal read immediately, like test-results-phase-{N}.txt — not a versioned audit artifact). Decisions that need a human (`halt-spec`, `halt-arch-decision`) are surfaced by the orchestrator to the human at the phase boundary — you do not resolve them and you do not cross role boundaries to work around them.
+**Verdict return.** End every Autonomous-Mode run by writing your verdict to its durable artifact AND printing it as your final output. The orchestrator reads the verdict **from disk** — only your final summary returns to it, and that summary's wording is not guaranteed — so the file is the source of truth. Verify and UAT agents write the `## Orchestrator Verdict` footer into their review report; the Coding Agent writes the `## Build Verdict` block into `/.agentic-reviews/build/build-verdict-phase-{N}.md` overwriting it on each build (it is a transient control signal read immediately, like test-results-phase-{N}.txt — not a versioned audit artifact). Decisions that need a human (`halt-spec`, `halt-arch-decision`) are surfaced by the orchestrator to the human at the phase boundary — you do not resolve them and you do not cross role boundaries to work around them.
 
 ---
 
@@ -201,7 +203,67 @@ Normally every agent runs *interactively*: it proposes before writing, asks when
 - **Session close.** The close signal comes from the operator. On close, run the normal Session Exit sequence (TRACKER.md update, `Progress` clear, agent messages, handoff summary). Your handoff summary is consumed by the operator, who reports to the user.
 - **Commit discipline unchanged.** Propose a commit message; never commit. The operator aggregates proposals for the user.
 
-**Operator obligations** (binding on the main-session operator assistant, not on spawned agents): spawn one work-session agent at a time; answer agent questions only within the user's stated intent; escalate to the user any decision that would conflict with or modify that intent, and any `halt-spec` / `halt-arch-decision` condition the intent does not already settle; never spawn the orchestrator — perform build → verify sequencing yourself; relay the substance of each agent's handoff summary to the user; propose commits at natural boundaries for the user to execute.
+### Running the application for UAT
+
+The UAT stage exercises a running application. The Product Agent cannot start one (no Bash) and neither can the orchestrator (read-only), which is why `/uat-loop` requires it to be running already or waits for the user to start it during the session. **An operator can** — the one thing an operator session does that no orchestrated loop can, and what makes unattended UAT possible at all.
+
+Bracket it explicitly:
+
+1. Spawn the Coding agent with the narrow task of starting the application for Phase N using the `start-command` in `/.agentic-reviews/build/runtime-phase-{N}.md`, running any `seed-state` command, confirming the `ready-check` passes, and returning the base URL. It launches detached so the process survives the worker's own session.
+2. Spawn the Product agent for `/verify-uat`.
+3. Spawn the Coding agent again to stop it, using `stop-command` or by terminating the process it started.
+
+Step 3 is not optional and not conditional on success. **If you started an application, you stop it** — before closing the session, and before returning control on any halt, including halts unrelated to UAT. A session that ends leaving a server running has leaked a process no one owns, on a machine you do not control.
+
+The start/stop task is the only work outside a `/build` workflow that an operator may give the Coding agent, and it is bounded to the commands the runtime handle already records.
+
+**If the application will not start,** do not ask the Coding agent to repair it inside the start task. The phase carries CLEAR arch and QA verdicts at that point, and any change to `/app/` invalidates both — a repair inside an ops task would leave the tracker asserting reviews that never saw the change. Route it as a fix-build instead: spawn the Coding agent for `/build {N}` with the startup failure as the gap, then re-run `/verify-arch` and `/verify-qa` before attempting UAT again. More work than a hot fix, and the same work any fix-build costs.
+
+This should be rare, since the Coding agent verifies the start command during the build and does not mark Build complete until the application comes up. A failure appearing at UAT time usually means the handle was written unverified, or the environment differs from the build's. Say which you think it is when reporting to the user — the second is not a code defect and a fix-build will not resolve it.
+
+**Operator obligations** (binding on the main-session operator assistant, not on spawned agents): record the user's intent in an intent file and get it confirmed before any work begins, and keep it current thereafter (see The Intent File below); spawn one work-session agent at a time; answer agent questions only within the user's stated intent; escalate to the user any decision that would conflict with or modify that intent, and any `halt-spec` / `halt-arch-decision` condition the intent does not already settle; never spawn the orchestrator — perform build → verify sequencing yourself; own the lifecycle of any application you have started for UAT (see Running the application for UAT below); recommend the Coding Agent's model (Sonnet or Opus) to the user based on the complexity of each phase and confirm before applying it; relay the substance of each agent's handoff summary to the user; commit at natural boundaries (do not push); before kicking off build work, confirm with the user whether to run all phases to completion or pause at each phase boundary, and record the answer under Human Gates in The Intent File.
+
+### The Intent File
+
+An operator session runs on the user's stated intent. That intent must be written to disk, because it is the boundary of everything the operator is permitted to decide — and an unwritten boundary does not survive a crash, a closed session, or a handoff to another engineer.
+
+**Write it before any work begins.** Draft the intent file from the conversation, read it back to the user, and write it only once they confirm. Proposal discipline applies here as it does to any substantive artifact. From that point the confirmed file, not the conversation, is the contract you are answerable to. Never author an intent file the user has not confirmed, and never begin spawning agents before one exists.
+
+**Location and filename.** `/intents/{timestamp}__{slug}.md`, where `timestamp` is UTC ISO-8601 with filesystem-safe separators (`-` in place of `:`), matching the agent-message convention — e.g. `/intents/2026-08-14T09-12-44Z__phase-3-to-5-build-out.md`. Create `/intents/` if it does not exist. `/intents/` is an operator-only path: no agent reads or writes there, and you never write anything else into it.
+
+**Scope.** One intent file commonly spans several phases and several sessions. It remains `status: active` until the work it describes is discharged, at which point you set `status: complete`. On resuming an operator session, read the active intent file first — it is how you reconstruct what you were authorized to do.
+
+**Format.** YAML frontmatter carries the deterministic fields; the body is three short prose sections plus an append-only amendments log.
+
+```
+---
+created: 2026-08-14T09:12:44Z
+operator: —              # human owner, if known
+status: active           # active | complete | superseded
+supersedes: —            # filename of the intent this replaces, if any
+superseded-by: —         # set when a later intent replaces this one
+---
+
+## Intent
+What the user wants done, and why. Subsumes objective and scope.
+
+## Boundaries
+What the operator must not do, must not touch, or must not decide alone — including anything explicitly out of scope, and any operating constraints (model and budget, phase range, technology limits).
+
+## Human Gates
+Where the operator must stop and return to the user before proceeding — named stage or phase boundaries, or specific decisions the user wants to see first.
+
+## Amendments
+Append-only. One entry per escalation: timestamp, the question put to the user, and their answer.
+```
+
+Keep all three sections short. `Boundaries` and `Human Gates` carry the operational weight — they are what turn "escalate anything that would conflict with the user's intent" from a judgment call into a checkable list. Consult them before every escalation decision.
+
+**Amendment or new intent.** When the user's answer to an escalation changes what was agreed, classify it, state the classification to the user, and let them confirm — as the Product Agent does for version bumps:
+
+> An answer is an **amendment** if it resolves a question *within* the existing Intent and Boundaries — disambiguating or deciding something the intent already implied. If it changes the Intent, or widens or narrows the Boundaries, it is a **new intent file** superseding this one. A contradiction always forces a new file, never an amendment.
+
+Amendments are appended to the log, never written over a previous entry. A superseded intent file is never edited beyond setting `status: superseded` and `superseded-by`, and is never deleted — it is the record of what was authorized at the time, and the same Review Report Integrity reasoning applies.
 
 ---
 
@@ -231,7 +293,7 @@ When invoked via `/ask [agent]`, you are in a read-only consultation session.
 
 ## Review Report Integrity
 
-**Never overwrite a prior run report.** Review reports are an immutable audit trail. Each run produces a new file with an incremented run number. The run number is determined by scanning the relevant `/.agentic-reviews/arch/` or `/.agentic-reviews/qa/` directory for existing reports matching `*-phase-{N}-run-*.md`, taking the highest run number found, and adding 1. Use run-1 if none exist.
+**Never overwrite a prior run report.** Review reports are an immutable audit trail. Each run produces a new file with an incremented run number. The run number is determined by scanning the relevant `/.agentic-reviews/arch/`, `/.agentic-reviews/qa/` or `/.agentic-reviews/uat/` directory for existing reports matching `*-phase-{N}-run-*.md`, taking the highest run number found, and adding 1. Use run-1 if none exist.
 
 **Always write the report even when CLEAR.** A CLEAR report is evidence that verification happened. The absence of a report is indistinguishable from a review that was never run.
 
@@ -241,7 +303,7 @@ When invoked via `/ask [agent]`, you are in a read-only consultation session.
 
 **The latest run is self-sufficient.** Downstream agents read only the highest-numbered run. Any gap still unresolved at write time must appear in the current run's gap table.
 
-**Every review report ends with an Orchestrator Verdict footer.** Both the Architect (`/verify-arch`) and QA (`/verify-qa`) review reports must close with the machine-readable `## Orchestrator Verdict` block defined in their agent MDs (`status`, `blocking-gaps`, `action`). This footer is mandatory in both interactive and autonomous runs — it is the deterministic signal the orchestrator parses, and it gives a human the verdict at a glance. The footer must agree with the report's `## Status` line and gap routing.
+**Every review report ends with an Orchestrator Verdict footer.** The Architect (`/verify-arch`), QA (`/verify-qa`) and Product (`/verify-uat`) review reports must all close with the machine-readable `## Orchestrator Verdict` block defined in their agent MDs (`status`, `blocking-gaps`, `action`). This footer is mandatory in both interactive and autonomous runs — it is the deterministic signal the orchestrator parses, and it gives a human the verdict at a glance. The footer must agree with the report's `## Status` line and gap routing.
 
 ---
 

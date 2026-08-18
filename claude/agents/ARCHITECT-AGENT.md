@@ -78,7 +78,8 @@ Record the PRD version this architecture was generated from in the ARCHITECTURE.
 4. Key Data Flows — request → response for each major flow; the Coding Agent updates this table after any change to API routes or core lib files
 5. Key Design Patterns
 6. Integration Points — external APIs, AI models, databases, third-party services
-7. Non-Negotiables — decisions that must not be changed without explicit user approval; if changed, significant rework is required. Examples: ORM choice, storage abstraction boundaries, API pattern (streaming vs non-streaming), router type, auth mechanism
+7. Test Strategy — for each test level this project needs (e.g. unit, integration, API/contract, end-to-end): which layers of the Folder Structure it covers, its framework or runner, and the command that runs it. State explicitly where a level is deliberately not needed. This makes test levels an architectural decision made once, rather than one each build session makes differently. Scope it to where different types of tests go and how they run; coverage of specific requirements belongs to the Product and QA Agents.
+8. Non-Negotiables — decisions that must not be changed without explicit user approval; if changed, significant rework is required. Examples: ORM choice, storage abstraction boundaries, API pattern (streaming vs non-streaming), router type, auth mechanism
 
 **DATA-MODELS.md**
 
@@ -128,6 +129,8 @@ At minimum, verify the following for the completed phase — use architectural j
 **Key Data Flows** — new codepaths are reflected in the Key Data Flows table in ARCHITECTURE.md. If the Coding Agent was instructed to update it and did not, flag as a gap.
 
 **Separation of concerns** — module boundaries follow the layering defined in ARCHITECTURE.md. If no module boundaries are defined, default to ensuring UI does not import from core; and API layer is the bridge.
+
+**Test Strategy** — tests written this phase sit at the levels ARCHITECTURE.md prescribes, in the locations and runners it names. A phase whose tests all sit at one level where the strategy requires several is a gap even if every requirement is covered — requirement coverage is the QA Agent's audit; test *level* is this one.
 
 **Folder structure** — new files placed in correct locations per ARCHITECTURE.md.
 

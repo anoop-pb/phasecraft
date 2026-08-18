@@ -25,7 +25,7 @@ A *session* in this README means one Claude Code conversation — from the momen
 
 ### How this README is structured
 
-> **Start here:** [Lifecycle & Workflow](#lifecycle--workflow) → [Quick Start & First Project](#quick-start--first-project)  
+> **Start here:** [Lifecycle & Workflow](#lifecycle--workflow) → [Modes of Operation](#modes-of-operation) → [Quick Start & First Project](#quick-start--first-project)  
 > **Using PhaseCraft:** [Command Reference](#command-reference)  
 > **Understanding PhaseCraft:** [Framework Internals](#framework-internals)  
 > **Reference:** [Practical Notes](#practical-notes) (models, multi-engineer, troubleshooting)  
@@ -35,7 +35,7 @@ A *session* in this README means one Claude Code conversation — from the momen
 ## Lifecycle & Workflow
 
 ```
-INIT → SPEC → UI → ARCH → PLAN → BUILD (per phase) → REVIEW (per phase)
+INIT → SPEC → UI → ARCH → PLAN → BUILD (per phase) → REVIEW (per phase) → UAT (per phase)
 ```
 
 | Stage | What gets done | Agent |
@@ -47,6 +47,7 @@ INIT → SPEC → UI → ARCH → PLAN → BUILD (per phase) → REVIEW (per pha
 | **PLAN** | Divide features into dependency-ordered phases | Project Manager |
 | **BUILD** | Implement and test one phase at a time | Coding Agent |
 | **REVIEW** | Architecture review + QA review per phase | Architect + QA Agents |
+| **UAT** | Exercise the running application against the specs per phase | Product Agent |
 
   
 While Phases are sequential, Stages are checkpoints, not locks. Any stage can be reopened without rolling back downstream work.
@@ -57,16 +58,35 @@ The `/plan` command divides your features into dependency-ordered phases. Each p
 
 ![Comparison of human-led sprints versus AI-first phases across four dimensions: core constraint, capacity metric, scope management, and execution](./assets/sprint-vs-phase.png)
 
-BUILD and REVIEW repeat for each phase. After each build, two independent reviews must pass before the next phase begins:
+BUILD, REVIEW and UAT repeat for each phase. After each build, three independent checks must pass before the next phase begins:
 
 - **`/verify-arch`** — checks code against architecture decisions, data models, and non-negotiables
 - **`/verify-qa`** — audits test coverage against feature specs and test specs
+- **`/verify-uat`** — exercises the running application against the feature specs and UI specs
 
-Both must report **CLEAR**. If gaps are found, the reports tell you exactly what to fix and which agent handles it. Review reports are immutable — each run creates a new versioned file as an audit trail.
+The first two read code and tests. The third reads neither: it drives the running product the way a user would. All must report **CLEAR**. If gaps or deviations are found, the reports tell you exactly what to fix and which agent handles it. Reports are immutable — each run creates a new versioned file as an audit trail.
+
+### The UAT stage
+
+UAT runs last, once both automated reviews are CLEAR — there is little point exercising an application whose build is still moving. It is owned by the **Product Agent**, on the same principle that gives architecture review to the Architect: the agent that wrote the specification is the one qualified to judge whether the built thing satisfies it. `/spec` and `/verify-uat` are two applications of the same product knowledge at different points in the lifecycle.
+
+What makes it a real check rather than a self-assessment is that the Product Agent is a black-box tester **by construction, not by discipline**. It never reads `/app/` or `/arch/` in either command. At UAT it sees the feature specs, the UI spec and mockups, and the running application at a URL — nothing else. It cannot rationalise a spec toward an implementation it cannot see. For the same reason it is read-only on `/prd/` during UAT: a deviation that turns out to be the spec's fault is routed to `/spec` and settled with you, not quietly fixed by the session that found it.
+
+**This is not user acceptance.** Acceptance is yours. The stage produces a deviation report — what was specified, what the application did, how to reproduce it — so the acceptance you perform starts from a checked baseline rather than a blank page.
+
+**Not every phase gets one.** Foundation phases often deliver nothing a person can exercise, so `/plan` marks each phase `UAT: applicable` or `N/A` when it writes PHASES.md; headless projects are `N/A` throughout. A phase marked `N/A` completes on the two automated reviews alone.
+
+**Something has to be running,** and who starts it differs by mode. The Coding Agent writes a runtime handle at `/.agentic-reviews/build/runtime-phase-{N}.md` — base URL, start command, ready check, test credentials, seed command — but it does not start the server as part of a build, and the Product Agent cannot (no Bash, by design).
+
+- **Interactive `/verify-uat`** — the session prints the start command and waits for you. It does not end; confirm the app is up and it continues.
+- **`/uat-loop`** — the application must already be running when you invoke it OR the session prints the start command and waits for you. The orchestrator is read-only and cannot start or stop anything, so the command blocks with the start command.
+- **Operator Mode** — the operator brackets it: it has the Coding Agent start the application, runs UAT, then has it stopped. This is the one thing an operator session does that no orchestrated loop can, and it is what makes a genuinely unattended UAT possible. The operator owns stopping what it started, including when it halts for an unrelated reason.
+
+A start failure at this point should be rare, because the Coding Agent verifies the start command during the build and will not mark Build complete until the application comes up. If it happens anyway, it is routed as a fix-build rather than repaired on the spot — by then the phase carries CLEAR arch and QA verdicts, and any change to `/app/` invalidates both.
 
 ### Running a phase under controlled autonomy — `/build-loop`
 
-`/build-loop N` runs the entire build → verify-arch → verify-qa loop for one phase on its own, repeating fix-build → re-verify until both reviews are CLEAR — instead of you running `/build`, `/verify-arch`, and `/verify-qa` by hand. It is driven by a dedicated **Orchestrator** agent — the one place in PhaseCraft where spawning workers is intentional. `/build-loop` adopts the orchestrator identity directly in your session (via `agent:`, no `context: fork`, like every other PhaseCraft command), then spawns the Coding, Architect, and QA agents as bounded workers (via the Agent tool) in *Autonomous Mode*, reads the verdict each one writes to disk, and decides the next step. The orchestrator must stay in the main conversation — it is never itself forked, because a forked context cannot spawn workers.
+`/build-loop N` runs the entire build → verify-arch → verify-qa loop for one phase on its own, repeating fix-build → re-verify until both reviews are CLEAR — instead of you running `/build`, `/verify-arch`, and `/verify-qa` by hand. It is driven by a dedicated **Orchestrator** agent — the one place in PhaseCraft where a slash command spawns workers on purpose. `/build-loop` adopts the orchestrator identity directly in your session (via `agent:`, no `context: fork`, like every other PhaseCraft command), then spawns the Coding, Architect, and QA agents as bounded workers (via the Agent tool) in *Autonomous Mode*, reads the verdict each one writes to disk, and decides the next step. The orchestrator must stay in the main conversation — it is never itself forked, because a forked context cannot spawn workers.
 
 It does not remove the human gate — it **relocates** it from every step to the phase boundary. You confirm scope at entry — `/build-loop N` lists the phase's features and waits for your go-ahead before the loop starts; control returns to you at completion or at a halt, with a full audit trail (every build writes test results, every verify writes an immutable versioned report, TRACKER.md stays current). The orchestrator is a read-only controller: the workers write all artifacts and their own TRACKER columns, and the phase's `Complete` flag is reconciled by the Project Manager on the next `/resume` — exactly as in the manual flow after a CLEAR `/verify-qa`. It never commits — it prints a consolidated proposed commit message for you to review and commit.
 
@@ -80,8 +100,11 @@ It does not remove the human gate — it **relocates** it from every step to the
 | `halt-arch-decision` | An Architect escalation or Non-Negotiable conflict | `/arch` to resolve, then `/build-loop N` |
 | `halt-blocker` | Tests still failing after the build's internal retry cap, or a hard technical blocker | `/build N` interactively, then `/build-loop N` |
 | `halt-cap` | 3 build→verify cycles elapsed without both reviews CLEAR | Review the gap reports; resume `/build-loop N` |
+| `uat-deviations` | `/uat-loop` only — the running application deviates from the feature or UI specs | Read the UAT report; `/build N` to fix, then `/uat-loop N` |
 
-`/build-loop` operates on exactly one phase per invocation (no ranges, no auto-advance). On a clean completion it recommends `/build-loop N+1` but does not run it. The manual `/build`, `/verify-arch`, and `/verify-qa` commands remain fully available for granular control, debugging, or the conversational path — `/build-loop` composes them, it does not replace them. Use the manual commands when you want a human gate at every step; use `/build-loop` when you want the phase driven to done with the gate at the boundary.
+**`/uat-loop N` is the same loop with the UAT stage appended.** The inner build → verify-arch → verify-qa cycle behaves identically, under the same cycle cap of 3; once both reviews are CLEAR it runs a **single** `/verify-uat` pass and stops on its verdict. There is no UAT retry loop, by design: an arch or QA gap means the code diverged from a decision already made, which the Coding Agent can close unattended, whereas a UAT deviation means the built thing does not do what was asked — a finding you should see before anything is changed in response to it. Every outer iteration is therefore human-sanctioned, which is also why no outer cap is needed. If a phase already reached both-CLEAR under `/build-loop`, `/uat-loop N` skips the inner cycle and goes straight to the UAT pass. The application must already be running; `/uat-loop` blocks at entry with the start command if it is not.
+
+Both commands operate on exactly one phase per invocation (no ranges, no auto-advance). On a clean completion it recommends `/build-loop N+1` but does not run it. The manual `/build`, `/verify-arch`, and `/verify-qa` commands remain fully available for granular control, debugging, or the conversational path — `/build-loop` composes them, it does not replace them. Use the manual commands when you want a human gate at every step; use `/build-loop` when you want the phase driven to done with the gate at the boundary.
 
 ### Dependencies between stages
 
@@ -92,6 +115,30 @@ Stages generally run in order, and the framework will block you if a prerequisit
 - ARCH needs enough UI stability for foundational decisions, but does not require complete UI coverage
 - After ARCH is in place, UI for later phases may proceed incrementally (without re-running `/arch`) as long as no new UI infrastructure requirements are introduced 
 
+
+---
+
+## Modes of Operation
+
+The same lifecycle, the same agents and the same artifacts can be driven three different ways. What changes between them is only *where the human gate sits* — at every step, at each phase boundary, or at the top level intent. Pick per task; they mix freely within one project.
+
+| Mode | How you invoke it | Where the human gate sits | Who talks to the agents |
+|------|-------------------|---------------------------|-------------------------|
+| **Interactive** *(default)* | Any slash command — `/spec`, `/arch`, `/build`, `/verify-*` | Every step — agents propose before writing and wait for you | You, directly |
+| **Controlled autonomy** | `/build-loop {N}` | After every `/spec`, `/arch`, `/ui` stage. Also, at the completion of each phase (once build → verify loop is done)  — you confirm scope at entry, control returns at completion or halt | The Orchestrator, on your behalf |
+| **Operator** | Plain request to the main session — no slash command | Your stated intent — the operator asks only when a decision would conflict with or modify it | The operator assistant, on your behalf |
+
+**Interactive** is the framework as described throughout this README. You run one command per session and converse with that agent directly. Use it whenever the work is the conversation — spec, UI, architecture — or when you want to inspect every step.
+
+**Controlled autonomy** is `/build-loop`, covered in [Running a phase under controlled autonomy](#running-a-phase-under-controlled-autonomy--build-loop). It is scoped to one phase's build → verify loop and driven by a dedicated Orchestrator agent.
+
+**Operator Mode** is the broadest. You ask the main session to act as your **operator assistant** and state what you want and it spawns the agents it needs, one at a time, each in its own context, working through the specifics on your behalf. It is Autonomous Mode with the operator standing in for you: agents never wait on a human, but where they would normally stop and ask, they ask the *operator*, which answers within your stated intent. Anything that would conflict with or modify that intent comes back to you.
+
+The operator never spawns the Orchestrator and never uses `/build-loop` — it performs the build → verify sequencing itself, so there is exactly one controller in the session. It relays each agent's handoff summary to you, and commits at natural boundaries (it never pushes).
+
+Before any work starts, the operator writes your intent to a file in `/intents/` and reads it back for confirmation. That confirmed file — not the chat — is the contract it is answerable to, which is what lets an operator session survive a crash, span several phases, and be picked up later or by another engineer. See [Intent files](#intent-files).
+
+Operator Mode is the least supervised path and correspondingly the one to be most deliberate about. Your intent is the whole contract — the more precisely you state it, the less the operator has to interpret. See [Recommended models](#recommended-models) for how model choice propagates through an operator session.
 
 ---
 
@@ -182,11 +229,17 @@ If **GAPS FOUND**:
 | QA gap (test implementation) | `/build 1` to fix → re-run `/verify-qa 1` |
 | QA gap (spec ambiguity) | `/spec` to clarify → `/build 1` → re-run `/verify-qa 1` |
 
-When both reviews are **CLEAR** → move to `/build 2` and repeat.
+When both reviews are **CLEAR** → run `/verify-uat 1` if the phase is marked `UAT: applicable`.
 
 ---
 
-**`/build-loop {phase-number}`** — The controlled-autonomy alternative to the three steps above. Runs build → verify-arch → verify-qa for the phase and loops fix-build → re-verify until both reviews are CLEAR, routing Coding-Agent-fixable gaps itself. It halts and hands control back to you only when a gap needs a spec or architecture decision, when a build is technically blocked, or after 3 cycles. Use it when you want the phase driven to done with the human gate at the phase boundary instead of at every step; use the manual `/build` + `/verify-*` commands when you want to gate each step yourself. See [Running a phase under controlled autonomy](#running-a-phase-under-controlled-autonomy--build-loop).
+**`/verify-uat {phase-number}`** — Start your application, then run this. The Product Agent exercises it against the feature specs and UI specs and writes a deviation report to `/.agentic-reviews/uat/`. Deviations route to `/build` (implementation doesn't match a clear spec), `/spec` (the spec is ambiguous or wrong), or `/ui` (the UI spec is). Fix, then re-run.
+
+When all applicable gates are **CLEAR** → move to `/build 2` and repeat.
+
+---
+
+**`/build-loop {phase-number}` / `/uat-loop {phase-number}`** — The controlled-autonomy alternative to the steps above; `/uat-loop` is the same loop with the UAT pass appended. Runs build → verify-arch → verify-qa for the phase and loops fix-build → re-verify until both reviews are CLEAR, routing Coding-Agent-fixable gaps itself. It halts and hands control back to you only when a gap needs a spec or architecture decision, when a build is technically blocked, or after 3 cycles. Use it when you want the phase driven to done with the human gate at the phase boundary instead of at every step; use the manual `/build` + `/verify-*` commands when you want to gate each step yourself. See [Running a phase under controlled autonomy](#running-a-phase-under-controlled-autonomy--build-loop).
 
 ---
 
@@ -237,11 +290,15 @@ PRD versions get a minor bump (+0.1) for modifications to existing features and 
 | `/arch` | Architect Agent | ARCHITECTURE.md, DATA-MODELS.md, DEPLOYMENT.md |
 | `/build {phase-number}` | Coding Agent | Code + tests for phase N |
 | `/build-loop {phase-number}` | Orchestrator | Controlled-autonomy build → verify loop for phase N (spawns coding/architect/qa) |
+| `/uat-loop {phase-number}` | Orchestrator | The same loop plus a single UAT pass (also spawns product) |
 | `/verify-arch {phase-number}` | Architect Agent | Architecture gap report |
 | `/verify-qa {phase-number}` | QA Agent | Test coverage gap report |
+| `/verify-uat {phase-number}` | Product Agent | UAT deviation report against the running application |
 | `/ask [agent]` | Named agent (read-only) | Answers only; no file writes |
 
 Each agent handles its own session entry, prerequisite checks, and TRACKER.md updates on close.
+
+There is no slash command for Operator Mode — you invoke it by asking the main session in plain language to act as your operator assistant ("run in Operator Mode", "act as my operator assistant") and stating what you want done. The request must be explicit: the main session does not enter Operator Mode by inference. See [Modes of Operation](#modes-of-operation).
 
 
 ---
@@ -257,12 +314,12 @@ Claude Code is powerful out of the box, but on non-trivial projects it tends to 
 | Agent | Role | Reads | Writes |
 |-------|------|-------|--------|
 | **Project Manager** | Lifecycle, init, planning, status | Everywhere | TRACKER.md, PHASES.md, DOMAIN-PERSONA.md, README.md |
-| **Product Agent** | Feature specs, test specs, NFR | `/prd/`, domain persona | `/prd/` only |
+| **Product Agent** | Feature specs, test specs, NFR; UAT of the running application | `/prd/`, domain persona; `/ui/` and the running app (UAT only) | `/prd/` (spec only), review reports to `/.agentic-reviews/uat` |
 | **UI Agent** | Personas, UI/UX spec, conversational interface | `/ui/`, `/prd/`, domain persona | `/ui/` only |
 | **Architect Agent** | Architecture, data models, deployment; arch review | `/prd/`, `/ui/`, `/arch/`, `/app/` (review only) | `/arch/`, review reports to `/.agentic-reviews/arch` |
-| **Coding Agent** | Implementation, tests | Everywhere | `/app/`, test results |
+| **Coding Agent** | Implementation, tests | Everywhere | `/app/`, test results, runtime handle |
 | **QA Agent** | Test coverage audit | `/prd/`, `/app/tests/`, test results | Review reports to `/.agentic-reviews/qa` |  
-| **Orchestrator** *(runs in the main session via `/build-loop`; never forked)* | Drives one phase's controlled-autonomy build → verify loop; spawns coding/architect/qa | Everywhere (read) | Nothing — read-only controller. Workers write all artifacts; completion is reconciled by the Project Manager on `/resume`. |  
+| **Orchestrator** *(runs in the main session via `/build-loop` or `/uat-loop`; never forked)* | Drives one phase's controlled-autonomy build → verify loop, plus the UAT pass under `/uat-loop`; spawns coding/architect/qa, and product for UAT | Everywhere (read) | Nothing — read-only controller. Workers write all artifacts; completion is reconciled by the Project Manager on `/resume`. |  
 
 In addition, all agents write status to TRACKER.md, and may send messages to any agent's inbox and consume messages from their own (`.agent-messages/`).  
 NOTE: `/` here represents project root.
@@ -320,9 +377,13 @@ app/                         ← all application code; generated by /build
 .agentic-reviews/            ← generated by /verify-arch and /verify-qa
   arch/
   qa/
+  uat/
+  build/                     ← runtime handle and build verdict; transient, not versioned
 
 .agent-messages/             ← directed agent-to-agent messages; transient
   <recipient-agent>/         ← one inbox per agent; one file per message; created lazily
+
+intents/                     ← operator-session intent files; written by the operator in Operator Mode
 ```
 
 ### Framework file roles
@@ -347,7 +408,55 @@ Agent sessions run directly — the user types a slash command and talks directl
 
 **Design decision:** Commands use the `agent:` frontmatter field (without `context: fork`) because PhaseCraft agents are conversational — the user interacts directly with the agent for the full session. `context: fork` would run the agent as a delegated task, preventing direct conversation. The `agent:` field loads the agent MD as the system prompt while the command file serves as the task prompt, and CLAUDE.md is auto-loaded as universal context. AGENT-STANDARDS.md is read by all agents.
 
-**The one deliberate exception is the Orchestrator (`/build-loop`).** It uses the same `agent:`-without-`context: fork` convention as every other command — adopted directly in the main session — but its purpose *is* to delegate: from the main session it spawns the Coding, Architect, and QA agents via the **Agent tool**, each in Autonomous Mode. It must stay in the main conversation; it is never itself forked, because a forked/subagent context cannot spawn further workers (which would break the loop). Spawning is quarantined to this single command and these three targets — the command's `allowed-tools` is `Agent(coding), Agent(architect), Agent(qa)`, and CLAUDE.md authorizes it there and nowhere else — so the conversational agents are still protected from accidental forking. (Each worker runs with its own declared tools, so the Coding worker keeps Bash and the verify workers do not.)
+**The first deliberate exception is the Orchestrator (`/build-loop` and `/uat-loop`).** It uses the same `agent:`-without-`context: fork` convention as every other command — adopted directly in the main session — but its purpose *is* to delegate: from the main session it spawns the Coding, Architect and QA agents via the **Agent tool**, each in Autonomous Mode, plus the Product agent under `/uat-loop`. It must stay in the main conversation; it is never itself forked, because a forked/subagent context cannot spawn further workers (which would break the loop). Spawning is quarantined to those targets by each command's `allowed-tools`, authorized in CLAUDE.md and nowhere else, so accidental forking of a conversational agent is still ruled out on the slash-command path. It may never spawn the Product agent to run `/spec` — resolving a spec is a human decision, and an orchestrator able to commission one could resolve its own halt. (Each worker runs with its own declared tools, so the Coding worker keeps Bash and the verify workers do not.)
+
+**The second is Operator Mode**, and it is the one case where no slash command and no agent identity is involved. When you explicitly ask the main session to act as your operator assistant, it may spawn any PhaseCraft agent **except the Orchestrator**, each in its own context, with a task prompt that states the agent is running in Operator Mode. The exclusion is structural, not stylistic: the operator *is* the controller for that session, so admitting a second one would leave two things sequencing the same phase. The operator performs the build → verify sequencing itself instead.
+
+Operator Mode is Autonomous Mode with the operator standing in for the human — same suppression of human gates, same unchanged discipline (file-access boundaries, role boundaries, Non-Negotiables, Review Report Integrity, normal Session Entry, incremental `Progress` writes). The one substantive amendment is what happens at a decision point: where an Autonomous-Mode worker performs a clean HALT, an Operator-Mode agent asks the operator and continues when the answer arrives. Halt codes still exist for anything the operator itself cannot settle — a missing upstream artifact, tests failing past the iteration cap, or a decision the user's stated intent does not cover. The full contract, including the operator's own obligations, is in `AGENT-STANDARDS.md` → Operator Mode; the authorization is in CLAUDE.md.
+
+### Intent files
+
+An operator session runs on your stated intent. `/intents/` is where that intent stops being a chat message and becomes an artifact.
+
+**Written by the operator, confirmed by you.** You state what you want in plain language; the operator drafts the file, reads it back, and writes it only once you confirm — the same propose-before-writing discipline every other agent follows. From that point the confirmed file, not the conversation, is the contract it is answerable to. You do not hand-author these; if you want tighter control, tighten the draft before confirming.
+
+**One intent, not one session.** A single intent file commonly spans several phases and several sessions. It stays `active` until the work it describes is discharged, then closes as `complete`. This is what makes an operator session resumable — a crashed or closed session leaves the contract intact on disk, and it travels between engineers by git exactly as TRACKER.md does.
+
+**Filename:** `{timestamp}__{slug}.md`, using the same filesystem-safe UTC ISO-8601 form as agent messages (e.g. `2026-08-14T09-12-44Z__phase-3-to-5-build-out.md`).
+
+**Structure.** YAML frontmatter carries the deterministic fields; the body is three short prose sections plus the amendments log.
+
+```
+---
+created: 2026-08-14T09:12:44Z
+operator: —              # human owner, if known
+status: active           # active | complete | superseded
+supersedes: —            # filename of the intent this replaces, if any
+superseded-by: —         # set when a later intent replaces this one
+---
+
+## Intent
+What you want done, and why. Subsumes objective and scope.
+
+## Boundaries
+What the operator must not do, must not touch, or must not decide alone — including anything explicitly out of scope, and any operating constraints (model and budget, phase range, technology limits).
+
+## Human Gates
+Where the operator must stop and come back to you before proceeding — named stage or phase boundaries, or specific decisions you want to see first.
+
+## Amendments
+Append-only. One entry per question the operator escalated and the answer you gave, timestamped.
+```
+
+Keep all three sections short. `Boundaries` and `Human Gates` do the real work: the operator's standing rule is to escalate anything that would conflict with or modify your intent, and stating those limits up front turns a vague judgment call into a checkable list.
+
+**Amendment or new intent?** When your answer to an escalation changes what was agreed, the operator classifies it and you confirm — the same way PRD version bumps are classified:
+
+> An answer is an **amendment** if it resolves a question *within* the existing Intent and Boundaries — disambiguating or deciding something the intent already implied. If it changes the Intent, or widens or narrows the Boundaries, it is a **new intent file** that supersedes this one. A contradiction always forces a new file, never an amendment.
+
+The point of the test is to stop the amendments log from quietly becoming the place the real contract lives. A superseded file is never edited or deleted — it is marked `superseded`, cross-linked to its replacement, and left as the record of what was authorized at the time. Reviews follow the same rule.
+
+**Not read by agents.** Intent files are for the operator and for you. Spawned agents get their scope from the task prompt the operator composes and from the project artifacts — translating intent into agent-scoped instructions is precisely the operator's job. Nothing downstream reads `/intents/`, and no agent writes there.
 
 ### Extending the framework
 
@@ -361,7 +470,13 @@ To add a custom agent (e.g., a Security Agent or Deploy Agent), create a new `*-
 
 ### Recommended models
 
-PhaseCraft does not enforce a model per command for direct, interactive use — choose based on your account, budget, and preference. **One exception:** `ARCHITECT-AGENT.md` and `QA-AGENT.md` carry `model: opus` in frontmatter so that when `/build-loop` spawns them as bounded workers they run Opus regardless of the model the main session (and the Coding worker) is running under, letting you run `/build-loop` on Sonnet for cheap builds while keeping review quality high.* This pin is not expected to affect direct `/arch`, `/verify-arch`, or `/verify-qa` sessions — those adopt the agent identity directly in your main session rather than being spawned as a subagent, so model there still follows whatever you've selected.
+PhaseCraft does not enforce a model per command for direct, interactive use — choose based on your account, budget, and preference. The recommendations below are defaults, not constraints.
+
+**Spawned agents are a different matter,** because you are not there to pick. Every agent except the Product Agent therefore carries a `model:` pin in frontmatter, which applies when that agent is spawned as a bounded worker — by `/build-loop` or by an operator session. `ARCHITECT-AGENT.md` and `QA-AGENT.md` pin `model: opus` so review quality holds up regardless of what the spawning session is running; the rest pin `model: sonnet`, which keeps unattended work cheap by default.* These pins are not expected to affect a directly-adopted session — `/arch`, `/verify-arch`, `/verify-qa` and the rest adopt the agent identity in your main session rather than being spawned as a subagent, so model there still follows whatever you have selected.
+
+**`PRODUCT-AGENT.md` is deliberately left unpinned** so that it inherits the spawning session's model. Spec decisions have the largest downstream blast radius in the lifecycle — everything from architecture to test coverage is derived from them — so the Product Agent should get the best model in play, not a cheap default. The corollary is a recommendation: **run an operator session on Opus or Fable**, and the Product Agent inherits it.
+
+Claude Code is understood to let a spawning session override a spawned agent's pinned model, which is what makes the operator's per-phase model judgment possible (see `AGENT-STANDARDS.md` → Operator Mode). Treat this as unverified across Claude Code versions — if the override does not take, the Coding Agent's `model: sonnet` pin is the outcome, which is a safe default from a budget perspective rather than a failure.
 
 | Command | Recommended | Reason |
 |---------|-------------|--------|
@@ -370,14 +485,17 @@ PhaseCraft does not enforce a model per command for direct, interactive use — 
 | `/arch` | Opus | Highest reasoning depth; Non-Negotiables have large downstream impact |
 | `/build` | Sonnet | Code generation; quality driven by spec and arch inputs |
 | `/verify-arch`, `/verify-qa` | Opus | Gap detection benefits from careful reasoning |
+| `/verify-uat` | Opus or Fable | Judging observed behavior against specs, and comparing screens to mockups, rewards depth; the Product Agent is unpinned, so this follows your selection |
 | `/ask` | Sonnet | Conversational Q&A |
-| `/build-loop` | Sonnet, or Opus | The Coding worker follows whatever model you launch the session under (Sonnet keeps it cheap); the Architect and QA workers run Opus regardless, via their frontmatter pin. Launching the session itself on Opus instead simply makes the Coding worker Opus too. |
+| `/build-loop` | Sonnet | Every worker runs its own pinned model, so the session model matters little: the Coding worker runs Sonnet and the Architect and QA workers run Opus, whichever model you launch under. Launching on Sonnet keeps the orchestrator itself cheap. |
+| `/uat-loop` | Sonnet, or Opus/Fable | The inner cycle behaves as `/build-loop`. The Product worker is unpinned, so it inherits the session model — launch higher if you want the UAT pass to reason hard. |
+| Operator session *(no slash command)* | Opus or Fable | The unpinned Product Agent inherits the session model, so spec decisions get your best model. Pinned agents run their own model unless the operator overrides per phase. |
 
 When in doubt, use Sonnet for speed and cost, Opus when the output has significant downstream consequences.
 
-\* Frontmatter `model:` pinning is honored for genuine Claude Code subagent invocations — the Agent-tool spawn path `/build-loop` uses. Whether this could ever affect a directly-adopted, non-forked session is Claude Code implementation behavior that hasn't been exhaustively verified, and may change across Claude Code versions. If a direct `/arch`, `/verify-arch`, or `/verify-qa` run unexpectedly shows Opus behavior regardless of your interactive model selection, check your installed Claude Code version and report the issue.
+\* Frontmatter `model:` pinning is honored for genuine Claude Code subagent invocations — the Agent-tool spawn path used by `/build-loop` and by operator sessions. Whether it could ever affect a directly-adopted, non-forked session is Claude Code implementation behavior that hasn't been exhaustively verified, and may change across Claude Code versions. If a direct session unexpectedly shows the pinned model's behavior regardless of your interactive model selection, check your installed Claude Code version and report the issue.
 
-**Subscription tier guidance.** Opus sessions consume tokens significantly faster than Sonnet sessions, and the framework recommends Opus for the commands where reasoning depth matters most (`/arch`, `/verify-arch`, `/verify-qa`, and — via frontmatter pin — the Architect/QA agents inside `/build-loop`). This affects subscription tier choice:
+**Subscription tier guidance.** Opus sessions consume tokens significantly faster than Sonnet sessions, and the framework recommends Opus for the work where reasoning depth matters most (`/arch`, `/verify-arch`, `/verify-qa`, the Architect/QA pins that apply inside `/build-loop` and operator sessions, and the operator session itself). This affects subscription tier choice:
 
 - **Pro:** workable for small projects with few phases and simple architecture. Likely to exhaust Opus quota early in any non-trivial project.
 - **Max:** recommended for real-world use. Multi-phase projects with meaningful architecture reviews benefit substantially from the higher quota.
@@ -395,6 +513,18 @@ Create `CODING-STANDARDS.md` at project root with your project-specific implemen
 ### Updating the framework
 
 Copy new agent MDs into `.claude/agents/`, command MDs into `.claude/commands/`, `CLAUDE.md` into the project root, and `FRAMEWORK-VERSION` into `.claude/`. All agents pick up changes automatically on their next invocation. Restarting Claude Desktop is recommended. Existing review reports are unaffected.
+
+**Upgrading from v0.5.2 to v0.6.0.** Three additions.
+
+*Operator Mode* — a third invocation mode alongside interactive and Autonomous, in which the main session acts as your operator assistant, spawns agents on your behalf within a stated intent, and performs the build → verify sequencing itself. The authorization is a second exception in CLAUDE.md (the Orchestrator remains the first, and is the one agent an operator may never spawn); the behavioral contract and the operator's obligations are in `AGENT-STANDARDS.md` → Operator Mode. Each agent's frontmatter `description` now states whether it may be spawned in Operator Mode. Operator sessions record their contract in a new `/intents/` folder — see [Intent files](#intent-files) — created lazily on the first operator session, so projects that never use the mode never get one. Frontmatter `model:` pinning also extends from the Architect/QA pair to every agent except the Product Agent, left unpinned so it inherits the spawning session's model — see [Recommended models](#recommended-models).
+
+*Test Strategy* — `ARCHITECTURE.md` gains a section naming the test levels a project uses, what belongs at each, and how each runs, decided once at `/arch` rather than left to per-session judgment. The Coding Agent writes to it, `/verify-arch` checks conformance to it, and the QA Agent continues to audit requirement coverage regardless of level. Existing projects have no Test Strategy section until `/arch` is re-run; until then the Coding Agent proposes levels and asks you to record them.
+
+*UAT stage* — a per-phase gate owned by the Product Agent via `/verify-uat`, exercising the running application against the feature and UI specs and writing a deviation report to `/.agentic-reviews/uat/`. `/uat-loop` is the orchestrated form (`/build-loop` plus a single UAT pass) and is the one place the orchestrator may spawn the Product agent. The Coding Agent now writes a runtime handle at `/.agentic-reviews/build/runtime-phase-{N}.md` so a UAT session knows where the application is.
+
+**Migration.** The first two additions are drop-in — no PRD, phase, code, or review changes are needed. The UAT stage needs one `/plan` run. It adds a `UAT:` line to each PHASES.md phase block, written by `/plan`, and a `UAT` column to TRACKER.md's Phase Status table, added automatically by the first agent to write the tracker under the new version — the same normalization path the `Handoff notes` → `Progress` migration used, with `/resume` as the deterministic backstop since it runs at the start of every session. Phase completion now requires UAT alongside the two automated reviews. Phases already marked `✓ complete` keep that status and are not reopened — they completed under the rules in force at the time, and the forward-only rule applies here as everywhere else.
+
+If you skip the re-plan, nothing breaks: phases with no `UAT:` line simply complete on the two automated reviews, exactly as they did in v0.5.2. But that is a gate silently not running, and `✓ complete` will mean something different from what it means in a migrated project — so `/resume` and `/sitrep` warn until you run `/plan`. Where UAT applicability is genuinely unclear, `/plan` proposes `applicable` and lets you downgrade it: an unnecessary UAT pass costs a session, a wrongly skipped one costs you the last human-facing gate before a phase is called done.
 
 **Upgrading from v0.5.1 to v0.5.2.** v0.5.2 replaces the `mcp__filesystem__*` tool wildcard in every agent's frontmatter `tools` field (and each command's `allowed-tools`) with native tools — `Read`, `Write`, `Edit`, `Glob`, `Grep` — because Claude Code's permission gate matches tool names exactly and does not seem to expand the wildcard, so agents were hitting a manual permission prompt on every distinct filesystem MCP call. QA and the Orchestrator do not get `Edit` (QA never modifies code or prior reports; the Orchestrator never writes any file). `AGENT-STANDARDS.md` → Tools is updated to describe the native tools instead. v0.5.2 also adds `model: opus` to `ARCHITECT-AGENT.md` and `QA-AGENT.md` frontmatter, so the Architect and QA workers spawned by `/build-loop` always run Opus regardless of the model the main `/build-loop` session (and its Coding worker) is running under — see Recommended Models. Separately, v0.5.2 fixes agent message consumption: no non-Coding agent ever had a delete-capable tool (native tools can't delete files, and the standard filesystem MCP server never offered a `delete_file` op either), so "consume message = delete the file" was unworkable since messaging was introduced. Consuming a message is now overwriting it with empty content via the `Write` tool every agent already has access to; a message file with empty content is treated as already-consumed and skipped on read, rather than physically removed. Migration is otherwise drop-in — no PRD, phase, code, or review changes are needed. If an MCP filesystem server is still configured in your environment, it is simply unused by PhaseCraft agents from this version on.
 

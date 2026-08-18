@@ -2,9 +2,9 @@
 
 **When a slash command has an `agent:` field, adopt that agent's identity directly in this session. Do not delegate to a sub-agent via the Agent/Task tool. Do not use `context: fork` or background agent spawning.**
 
-**First exception — the orchestrator.** The orchestrator agent (command: `/build-loop`) is authorized to spawn bounded workers (coding, architect, qa) via the Agent tool. `/build-loop` adopts the orchestrator identity directly in the main session via its `agent:` field with **no** `context: fork`, and from there spawns the workers. No other agent or command may spawn subagents, and the orchestrator must never itself be forked or run as a subagent — a forked/subagent context cannot spawn further workers.  The orchestrator may spawn only those three agents and only in Autonomous Mode (see `AGENT-STANDARDS.md` → Autonomous Mode).
+**First exception — the orchestrator.** The orchestrator agent (commands: `/build-loop` and `/uat-loop`) is authorized to spawn bounded workers (coding, architect, qa, and — for `/uat-loop` only — product) via the Agent tool. Each adopts the orchestrator identity directly in the main session via its `agent:` field with **no** `context: fork`, and from there spawns the workers. No other agent or command may spawn subagents, and the orchestrator must never itself be forked or run as a subagent — a forked/subagent context cannot spawn further workers.  For `/uat-loop`, which appends the UAT stage to the same loop, it may additionally spawn the product agent to run `/verify-uat`. The orchestrator may spawn only those four agents, only for those workflows, and only in Autonomous Mode (see `AGENT-STANDARDS.md` → Autonomous Mode).
 
-**Second exception — Operator Mode.** When the user explicitly asks the main session to act as their **operator assistant** (no slash command run, no agent identity adopted), the main session may spawn any PhaseCraft agent **except the orchestrator** via the Agent tool, each in its own context, with a task prompt that explicitly states the agent is running in Operator Mode (see `AGENT-STANDARDS.md` → Operator Mode). The operator works through specifics with the agents on the user's behalf within the user's stated intent, pausing to ask the user only when a decision would conflict with or modify that intent. The orchestrator is never spawned and `/build-loop` is not used in operator sessions — the operator performs the build → verify sequencing itself.
+**Second exception — Operator Mode.** When the user explicitly asks the main session to act as their **operator assistant** (no slash command run, no agent identity adopted), the main session may spawn any PhaseCraft agent **except the orchestrator** via the Agent tool, each in its own context, with a task prompt that explicitly states the agent is running in Operator Mode (see `AGENT-STANDARDS.md` → Operator Mode). The operator works through specifics with the agents on the user's behalf within the user's stated intent, pausing to ask the user only when a decision would conflict with or modify that intent. That intent is recorded in a confirmed intent file under `/intents/` before any work begins — the operator's one write target, and a path no agent reads or writes (see `AGENT-STANDARDS.md` → Operator Mode → The Intent File). The orchestrator is never spawned and `/build-loop` is not used in operator sessions — the operator performs the build → verify sequencing itself.
 
 A lifecycle-staged multi-agent framework for building software with AI. Each stage is worked on by one or more focused agents with explicit file access boundaries. Agents do not drift into each other's concerns.
 
@@ -13,7 +13,7 @@ A lifecycle-staged multi-agent framework for building software with AI. Each sta
 ## Lifecycle Stages
 
 ```
-INIT → SPEC → UI → ARCH → PLAN → BUILD (per phase) → REVIEW (per phase)
+INIT → SPEC → UI → ARCH → PLAN → BUILD (per phase) → REVIEW (per phase) → UAT (per phase)
 ```
 INIT    - project initialization
 SPEC    - product specifications
@@ -22,13 +22,14 @@ ARCH    - technical architecture
 PLAN    - phase planning
 BUILD   - implementation and testing
 REVIEW  - architecture & QA verification
+UAT     - agent-run acceptance testing of the running application
 
 Stages are checkpoints, not locks — any stage can be reopened without rolling back downstream stages already underway.
 
 ### Phases
 
 The plan stage divides features into dependency-ordered phases. Each phase is a set of features that can be fully tested in isolation. Phases are bounded by AI constraints for building and testing - preventing too much scope in a single session to avoid token exhaustion, containing context to avoid drift over long sessions and sequencing by dependency so that foundational layers are fully tested before the next phase builds on them.
-BUILD and REVIEW repeat for each phase. A phase is not complete until both architecture and QA reviews are CLEAR. 
+BUILD, REVIEW and UAT repeat for each phase. A phase is not complete until both architecture and QA reviews are CLEAR and UAT is CLEAR (or marked `N/A` for that phase). UAT runs last, after both automated reviews pass — it exercises the running application, which is only worth doing once the build is settled. 
 
 ---
 
@@ -67,8 +68,8 @@ PhaseCraft version at last update: —
 ```
 ## Phase Status
 
-| Phase | PRD version | Build | Arch Review | QA Review | Complete | Progress |
-|-------|-------------|-------|-------------|-----------|----------|----------|
+| Phase | PRD version | Build | Arch Review | QA Review | UAT | Complete | Progress |
+|-------|-------------|-------|-------------|-----------|-----|----------|----------|
 
 (phases added by /plan)
 ```
@@ -91,7 +92,8 @@ PhaseCraft version at last update: —
 | Build | `not started` → `in progress` → `complete` |
 | Arch Review | `—` (not run) → `run-{R} CLEAR` or `run-{R} GAPS FOUND` |
 | QA Review | `—` (not run) → `run-{R} CLEAR` or `run-{R} GAPS FOUND` |
-| Complete | `—` → `✓ complete` (set by `/resume` reconciliation when both reviews show CLEAR on latest run) |
+| UAT | `—` (not run) → `run-{R} CLEAR` or `run-{R} DEVIATIONS FOUND` → `N/A` (phase has no user-facing surface, or the project is headless; set by `/plan` from the phase block's `UAT:` line) |
+| Complete | `—` → `✓ complete` (set by `/resume` reconciliation when both reviews show CLEAR on latest run **and** UAT shows CLEAR or `N/A`) |
 
 ---
 
@@ -162,9 +164,9 @@ When a spec change affects phases, these rules determine impact:
 
 **Patch bumps (clarifications) do not trigger rework — with one carve-out for completed phases.** A patch version bump (`v{X.Y.Z}`) is a clarification of existing language — no new or changed behavior or scope (as per the Product Agent's patch-eligibility test). It triggers no reassessment of any **in-progress or pending** phase: an in-progress phase picks the clarification up on its next `/build` (which records `v{X.Y.Z}` in its PRD version column), and a pending phase reads the clarified sections when it is first built. **Exception:** if a clarified section maps to a **completed** phase, the Coding Agent's current-phase scope cannot pick it up, so `/plan` detects this on its next run it scans the `PATCH-v*` changelogs, maps clarified sections to phases via PHASES.md, and adds a corrective item to the next pending or in-progress phase — the same forward-only rule completed phases follow for any spec change. This is the only downstream action a patch produces.
 
-**Completed phases** (both reviews CLEAR): Never reopened. If a spec change makes a completed phase's output incorrect, the fix is forward-only — add a corrective item to the next pending phase.
+**Completed phases** (arch and QA reviews CLEAR, and UAT CLEAR or `N/A`): Never reopened. If a spec change makes a completed phase's output incorrect, the fix is forward-only — add a corrective item to the next pending phase.
 
-**In-progress phases** (build started but not yet CLEAR): Modified only if the change directly affects features currently being built in that phase AND the fix cannot be deferred to a later phase without causing integration failures. Examples: (1) the change alters an API contract or data model that code in this phase depends on, or (2) the change removes a feature currently being implemented.
+**In-progress phases** (build started but not yet through every applicable gate): Modified only if the change directly affects features currently being built in that phase AND the fix cannot be deferred to a later phase without causing integration failures. Examples: (1) the change alters an API contract or data model that code in this phase depends on, or (2) the change removes a feature currently being implemented.
 
 **Pending phases** (not started): Freely modified. Re-run `/plan` to reassign features or adjust scope.
 

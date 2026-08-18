@@ -41,6 +41,7 @@ What you own:
 - Never invoke sub-agents
 - Never intermediate a sub-agent session
 - If prerequisites for a sub-agent command are not met, tell the user what is missing — do not run the command yourself
+- On `/resume` and `/sitrep`: if the project's version stamp predates v0.5.3 and either the TRACKER Phase Status table has no `UAT` column or PHASES.md phase blocks carry no `UAT:` line, warn explicitly that the UAT stage is not running for any phase and name `/plan` as the fix. A project that silently skips a gate it now has is worse than one that never had it — the tracker will read `✓ complete` either way.
 - On `/resume` and `/sitrep`: if DOMAIN-PERSONA.md still contains placeholder or TBD text, include a warning in the output: "⚠ DOMAIN-PERSONA.md is not filled out — all agents are operating as generalists. Run `/start` to complete it before proceeding with `/spec`."
 - Always end /resume and /sitrep with a specific recommended slash command
 
@@ -55,6 +56,8 @@ What you own:
 /sitrep    → report current project state (read-only)
 ```
 
+Note that `/plan` sets each phase's `UAT:` applicability, which determines whether the UAT stage runs for that phase. This is a scoping judgment (does this phase deliver something a user can exercise?), not a product judgment about what the phase should contain.
+
 Sub-agent commands run directly by the user (not through Project Manager):
 ```
 /spec          → Product Agent
@@ -63,10 +66,11 @@ Sub-agent commands run directly by the user (not through Project Manager):
 /build         → Coding Agent
 /verify-arch   → Architect Agent (architecture review)
 /verify-qa     → QA Agent (test coverage review)
+/verify-uat    → Product Agent (UAT of the running application)
 /ask [agent]   → Named agent, read-only
 ```
 
-Verification runs as two separate commands: the user runs `/verify-arch phase-N` followed by `/verify-qa phase-N`. Both must show CLEAR before the next phase begins. The Project Manager does not invoke either command — it tells the user which to run.
+Verification runs as three separate commands in order: the user runs `/verify-arch phase-N`, then `/verify-qa phase-N`, then — once both are CLEAR and if the phase is marked `UAT: applicable` — `/verify-uat phase-N`. All applicable gates must show CLEAR before the next phase begins. The Project Manager does not invoke either command — it tells the user which to run.
 
 ---
 
@@ -98,7 +102,7 @@ After the entry banner, greet the user: "Welcome to PhaseCraft — let's set up 
 - Repo folder structure — create all of the following directories:
   `/prd/sections/03-functional-requirements/`, `/prd/output/`, `/prd/diffs/`, `/ui/mockups/`, `/arch/`, `/app/`, `/.agentic-reviews/arch/`, `/.agentic-reviews/qa/`, `/.agentic-reviews/build/`
 - `DOMAIN-PERSONA.md` — created conversationally: ask the user to describe the domain, industry, user types, and professional context that all agents should assume expertise in. Write the persona as a direct instruction to agents ("Assume expertise in X...") — not as a description of the product's users. Do not use 'You are a...' framing — agents already have their own role identities. Use 'Assume expertise in...' to layer domain knowledge onto their existing roles.
-- `README.md` — project name, description, primary users, key features, setup/run instructions (placeholder until /arch fills in stack)
+- `README.md` — project name, description, primary users, key features, setup/run instructions (placeholder until /arch fills in stack).
 - `TRACKER.md` — initialized per the format defined in CLAUDE.md, with all lifecycle stages marked not started, and the `PhaseCraft version at last update` field set to the current `.claude/FRAMEWORK-VERSION`
 - Verify `.claude/agents/` contains all required framework files
 
@@ -163,12 +167,15 @@ Implement:
 Stop when: [explicit completion condition]
 Do not implement anything from Phase N+1 or later.
 Tests: write and run tests for all items above before finishing. 
+UAT: applicable | N/A — [reason]
 ```
 
-**TRACKER.md** — add phase rows:
+**Setting the `UAT:` line.** Mark a phase `applicable` when it delivers a user-facing surface a person could exercise — a screen, a flow, a conversational interaction. Mark it `N/A` with a one-line reason when it does not: foundation and infrastructure phases (schema, storage layer, auth plumbing with no UI yet) typically have nothing to accept, and their correctness is what the arch and QA reviews are for. For a headless project (UI row shows `N/A — headless`), every phase is `N/A — headless`. This line is what tells the UAT stage whether to run at all, so decide it deliberately rather than defaulting: a phase marked `N/A` skips the last human-facing gate before completion. If it is genuinely borderline, mark it applicable.
+
+**TRACKER.md** — add phase rows, setting the UAT column to `—` for phases marked `UAT: applicable` and `N/A` for those marked `UAT: N/A`:
 
 ```
-| N | — | not started | — | — | — | |
+| N | — | not started | — | — | — | — | |
 ```
 
 ### Guardrails
@@ -177,6 +184,7 @@ Tests: write and run tests for all items above before finishing.
 - If PRD or architecture inputs are missing, stop and tell the user what is needed
 - If PHASES.md already exists, confirm with the user whether this is an update or full replan before proceeding
 - If updating, preserve completed phases exactly — only modify not-started phases. In-progress phases may be modified only if the change meets the criteria in the Phase Rework Policy (see CLAUDE.md). Phases whose features were only modified (not added or removed) do not need re-planning — the diff flows to `/build` directly.
+- - **UAT applicability on a re-plan.** If an incomplete phase block has no `UAT:` line (a project planned before v0.5.3), add one. Where applicability is not obvious, propose `applicable` and let the user downgrade it — an unnecessary UAT pass costs a session, a wrongly skipped one removes the last human-facing gate before completion without anyone noticing.
 - **Patch-origin completed-phase correctives.** On `/plan`, scan `/prd/diffs/` for `PATCH-v*` changelogs newer than the PRD version already reflected in PHASES.md / the relevant phase rows. For each, map its listed section files to phases via PHASES.md and read each phase's status in TRACKER.md. For any section mapping to a phase marked Complete (`✓ complete`), add a forward-only corrective item to the next pending or in-progress phase per the Phase Rework Policy (completed phases are never reopened). Sections mapping to in-progress or pending phases need no action — they pick the clarification up on their next/first `/build`. This is the only PHASES.md action a patch ever causes.
 - PHASES.md is a boundary document, not an implementation spec. Each phase block lists feature names and scope boundaries only — do not describe how features work, repeat detail from the PRD, architecture, or UI specs, or add implementation guidance. The Coding Agent reads those source documents directly.
 - Never add arch or QA review gaps to PHASES.md. Gap reports in /.agentic-reviews/ are the authoritative record; the Coding Agent reads them directly. If QA or arch review finds gaps and subsequently the feature/test/UI spec is fixed to address any of the gaps, the correct action is to ensure the Build status in TRACKER.md is not marked complete — not to modify the phase block. The Phase does not need to be changed as any gap fixes stay within the existing feature scope of the phase, irrespective of whether they are implementation-only fixes or driven by a spec fix. 
@@ -206,8 +214,8 @@ Lifecycle:
   PLAN:   in progress (last updated: {date}) / not started
 
 Phases:
-  Phase 1: build complete (PRD v1.0) | arch run-2 CLEAR | qa run-1 CLEAR | ✓ complete
-  Phase 2: build complete (PRD v1.2) | arch run-1 GAPS FOUND | qa not run | ✗ blocked
+  Phase 1: build complete (PRD v1.0) | arch run-2 CLEAR | qa run-1 CLEAR | uat N/A | ✓ complete
+  Phase 2: build complete (PRD v1.2) | arch run-1 GAPS FOUND | qa not run | uat not run | ✗ blocked
   Phase 3: not started
 
 Pending agent messages (unconsumed):
@@ -216,6 +224,7 @@ Pending agent messages (unconsumed):
 
 ⚠ Warnings:
   - DOMAIN-PERSONA.md is not filled out — all agents are operating as generalists. Run /start to complete it before proceeding with /spec.
+  - Phase Status has no UAT column, or PHASES.md phase blocks have no UAT: line — this project predates v0.5.3 and the UAT stage is not running for any phase. Run /plan to set applicability; /resume adds the column.
   - Phase 1 was built against PRD v1.0 but the PRD has since been updated to v1.2. Check whether the changes affect phase 1 — run /resume for guidance.
   - Arch review (phase-1 run-1) was run against PRD v1.0. Current PRD is v1.2. Consider re-running /verify-arch for phase 1.
   - Project last ran under PhaseCraft v0.3.x but installed version is v0.4.0. State auto-normalizes on the next full session.
@@ -244,11 +253,15 @@ The daily entry point. Reads TRACKER.md, PHASES.md, and the Progress cells to de
 
 On `/resume`, if TRACKER.md still shows a Handoff notes column header, rewrite the header to Progress (content unchanged) as part of reconciliation. This is the deterministic completion of the v0.3.x→v0.4.0 column migration.
 
+Likewise, if the Phase Status table has no `UAT` column, add it (between `QA Review` and `Complete`) and set every existing row's cell to `—`. Any agent writing TRACKER.md performs both normalizations per AGENT-STANDARDS Session Entry; `/resume` is the deterministic completion point because it is the one command run at the start of every session, so a project that has not re-planned in weeks still picks the column up. Do not infer applicability here — `/plan` decides that from the phase blocks. Phases already marked `✓ complete` keep that status: they completed under the rules in force at the time, and completed phases are never reopened.
+
 If TRACKER.md does not exist, stop and tell the user to run `/start` first.
 
 ### Phase Completion Reconciliation
 
-Before reporting status, check the Phase Status table for any phase where both Arch Review and QA Review show CLEAR on their latest run but the Complete column is not marked `✓ complete`. If found, set the Complete column to `✓ complete` and update Last updated. This ensures phase completion is always recorded, even if the verify session ended without marking it.
+Before reporting status, check the Phase Status table for any phase where all three gates have passed but the Complete column is not marked `✓ complete` — Arch Review and QA Review both CLEAR on their latest run, **and** UAT either CLEAR on its latest run or `N/A`. If found, set the Complete column to `✓ complete` and update Last updated. This ensures phase completion is always recorded, even if the verifying session ended without marking it.
+
+A phase whose arch and QA reviews are CLEAR but whose UAT column is still `—` is not complete — it is ready for UAT. Recommend `/verify-uat {N}` as the next command.
 
 ### Output
 

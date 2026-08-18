@@ -65,6 +65,8 @@ For each feature in the completed phase:
 
 A test that only asserts existence, non-null, or non-throwing is insufficient coverage. Flag it.
 
+**Test level is not your audit.** Whether the phase's tests sit at the levels the Test Strategy section of ARCHITECTURE.md prescribes is the Architect Agent's check in `/verify-arch`. Yours is whether each requirement in the feature and test specs is well covered by a test that genuinely verifies it, at whatever level it was written. Do not flag a requirement as a gap solely because its test sits at a different level than you would have chosen.
+
 ---
 
 ## Output: QA Review Report

@@ -48,7 +48,7 @@ If TRACKER.md shows Build status for this phase as `in progress`:
 ## Guardrails
 
 - Read: anywhere in project
-- Write: `/app/`, Key Data Flows table in `/arch/ARCHITECTURE.md`, `/.agentic-reviews/qa/test-results-phase-{N}.txt`, `/.agentic-reviews/build/build-verdict-phase-{N}.md` (Autonomous Mode only), and `TRACKER.md` (per AGENT-STANDARDS)
+- Write: `/app/`, Key Data Flows table in `/arch/ARCHITECTURE.md`, `/.agentic-reviews/qa/test-results-phase-{N}.txt`, `/.agentic-reviews/build/build-verdict-phase-{N}.md` (Autonomous Mode only), `/.agentic-reviews/build/runtime-phase-{N}.md`, and `TRACKER.md` (per AGENT-STANDARDS)
 - Bash: `/app/` only — `/app/` is the project root for all application code, dependencies, build, and test commands. All package manifests (Example: package.json, requirements.txt, etc.) must be inside `/app/`. Do not run Bash outside `/app/`.
 - Never implement beyond the current phase block
 - Never work around Non-Negotiables without explicit user approval
@@ -169,7 +169,7 @@ Where ARCHITECTURE.md is silent on an implementation approach, confine decisions
 
 ### Test File Location
 
-Organize test files to mirror the source directory structure within `/app/tests/`. Use the appropriate test framework for the tech stack established in ARCHITECTURE.md. If not yet established, propose a framework before writing tests.
+Organize test files to mirror the source directory structure within `/app/tests/`. The Test Strategy section of ARCHITECTURE.md governs which test levels this project uses, what belongs at each, where each lives, and the runner and command for each — follow it. If ARCHITECTURE.md has no Test Strategy section (a project predating it, or an incomplete `/arch` run), propose a set of levels and a framework before writing tests, and tell the user to run `/arch` to record the decision properly rather than leaving it implicit in the code.
 
 **Verify all test files are written to `/app/tests/` in the project directory — not to temporary container directories.**
 
@@ -201,6 +201,36 @@ Do not work around ambiguous requirements or missing test specs:
 6. Run instructions: how to start the application locally
 7. Verification steps: how to confirm the phase works end-to-end
 8. Key Data Flows table updated in ARCHITECTURE.md if any API routes, middleware, or core lib files were added or changed — update is required, not optional
+9. Runtime handle written to `/.agentic-reviews/build/runtime-phase-{N}.md`, and its start command verified to bring the application up, if this phase has a user-facing surface (skip for headless projects and for phases marked `UAT: N/A` in PHASES.md)
+
+### Runtime Handle
+
+The UAT stage exercises the running application, and the Product Agent performing it has no Bash and never reads `/app/` — it must be told where the application is and how to reach it. Write that to `/.agentic-reviews/build/runtime-phase-{N}.md`, overwriting any prior save for this phase. Like `test-results-phase-{N}.txt` and the build verdict, it is a transient control signal, not a versioned audit artifact.
+
+```
+## Runtime Handle
+base-url: http://localhost:5173
+start-command: npm run dev          # run from /app/
+stop-command: —                     # if a specific teardown is needed
+ready-check: GET /api/health returns 200
+credentials: —                      # test account(s) if the phase requires auth
+seed-state: npm run seed            # command to load test data, or — if none
+notes: <one line — anything the tester needs that the above does not carry>
+```
+
+Record what is true of the application as built, not what would be convenient. If the phase requires seeded data or a test account to exercise its flows, providing them here is part of finishing the build — a UAT session cannot create them.
+
+**Verify the handle before writing it.** Start the application, run `seed-state` if there is one, confirm `ready-check` passes, then stop it. An unverified start command is a guess, and a start failure found later at UAT time is far more expensive: by then the phase carries CLEAR arch and QA verdicts that any repair to `/app/` invalidates.
+
+**A phase whose application does not start is not built.** Treat a failing `ready-check` exactly as a failing test: fix it this session under the same 3-iteration cap, and do not mark Build complete until it passes. Fixing it means anything in your normal write scope — code, dependencies, build tooling, and configuration inside `/app/`. Nothing is off limits merely for being config; the build is where such things are settled. In Autonomous Mode, a start failure unresolved within the cap is `blocker: technical`.
+
+Two ordinary limits still apply. Do not make the application start by weakening it — disabling auth, stubbing an integration, or bypassing a Non-Negotiable changes what gets verified and shipped. And if the failure traces to wrong information in `/arch/DEPLOYMENT.md`, that file is not yours to correct: fix `/app/` where the fix genuinely belongs, otherwise stop and tell the user to run `/arch`, per Architecture Compliance.
+
+**You do not start the application as part of a build.** In an interactive session the user runs it; in an orchestrated `/uat-loop` run it must already be running before the command is invoked. A build session that leaves a server running behind it is a leak, not a handoff.
+
+**The one exception is a server-lifecycle task in Operator Mode.** An operator may spawn you with the narrow task of starting or stopping the application for UAT (see AGENT-STANDARDS → Operator Mode → Running the application for UAT). That task is not a build: run only the `start-command`, `seed-state` or `stop-command` recorded in the runtime handle, launch detached so the process outlives your session, confirm the `ready-check`, and return the base URL. The operator is responsible for stopping what it asked you to start.
+
+If the recorded command fails, **report it and stop — do not repair it inside this task.** Not because the defect is out of your scope (it is squarely yours, and should have been caught before the handle was written) but because any change to `/app/` invalidates the arch and QA verdicts the phase already carries, leaving it reading CLEAR on reviews that never saw the change. The route is a fix-build: a normal `/build` session with the startup failure as the gap, then re-verification. Do not improvise a workaround either — changing ports, stubbing a dependency or disabling configuration modifies the system under test to make the test possible.
 
 Tell the user the phase is ready for verification: run `/verify-arch phase-N` then `/verify-qa phase-N`.
 
@@ -251,7 +281,7 @@ A session is naturally complete when:
 - All tests pass (or failures are reported and direction sought)
 - Scope alignment check is printed
 - Output summary (files, test instructions, run instructions) is printed
-- TRACKER.md Build column for this phase updated to `complete` if all tests pass, or `in progress` if test failures remain and the user chose to exit.
+- TRACKER.md Build column for this phase updated to `complete` if all tests pass and (where the phase is `UAT: applicable`) the application starts and passes its ready check, or `in progress` otherwise.
 - A commit message has been proposed
 - `/app/tmp/` is empty
 
