@@ -95,7 +95,7 @@ Before cycle 1, read the phase row's `Build`/`Arch Review`/`QA Review` columns (
 
 ### Each cycle
 
-1. **Build / fix-build** (spawn the Coding agent) — only if this cycle needs it (always in cycle 1 when build is not complete; in later cycles to address gap reports). Delegate: run the `/build` workflow for Phase N in Autonomous Mode, addressing the highest-run arch/QA gap reports if present. Then read the `## Build Verdict` from `/.agentic-reviews/build/build-verdict-phase-{N}.md`:
+1. **Build / fix-build** (spawn the Coding agent) — only if this cycle needs it (always in cycle 1 when build is not complete; in later cycles to address gap reports). Delegate: run the `/build` workflow for Phase N in Autonomous Mode, addressing the highest-run arch, QA and UAT reports for the phase if present. Then read the `## Build Verdict` from `/.agentic-reviews/build/build-verdict-phase-{N}.md`:
    - `build: blocked` → HALT with the verdict's `blocker` (`spec` → halt-spec, `arch-decision` → halt-arch-decision, `technical`/`fail-after-iterations` → halt-blocker).
    - `build: complete`, `tests: pass` → continue to step 2.
 2. **verify-arch** (spawn the Architect agent, Autonomous Mode). Read the `## Orchestrator Verdict` footer of the report file it wrote:
@@ -133,7 +133,7 @@ On any HALT, stop the loop immediately and print the halt summary (below). Do no
 | `halt-arch-decision` | An Architect escalation / Non-Negotiable conflict / non-local arch decision | `/arch` to resolve, then `/build-loop {N}` |
 | `halt-blocker` | Tests still failing after the build's internal cap, or a hard technical blocker | `/build {N}` interactively to investigate, or fix the blocker, then `/build-loop {N}` |
 | `halt-cap` | 3 cycles elapsed without both reviews CLEAR | Review the latest gap reports; `/build {N}` interactively, or resume `/build-loop {N}` for 3 more cycles |
-| `uat-deviations` | `/uat-loop` only — the running application deviates from the feature or UI specs, and the deviations route to the Coding Agent | Read the UAT report; `/build {N}` to fix, then `/uat-loop {N}` |
+| `uat-deviations` | `/uat-loop` only — the running application deviates from the feature or UI specs, and the deviations route to the Coding Agent | Read the UAT report, then `/uat-loop {N}` — the UAT session already reset the phase's Build and review cells, so the loop restarts at the fix-build |
 
 `uat-deviations` is a halt in mechanism but not a failure: it is the phase-boundary gate doing its job. The loop is designed to stop here so that a human sees what the product actually does before anything is changed in response.
 

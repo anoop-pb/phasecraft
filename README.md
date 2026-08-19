@@ -100,7 +100,7 @@ It does not remove the human gate — it **relocates** it from every step to the
 | `halt-arch-decision` | An Architect escalation or Non-Negotiable conflict | `/arch` to resolve, then `/build-loop N` |
 | `halt-blocker` | Tests still failing after the build's internal retry cap, or a hard technical blocker | `/build N` interactively, then `/build-loop N` |
 | `halt-cap` | 3 build→verify cycles elapsed without both reviews CLEAR | Review the gap reports; resume `/build-loop N` |
-| `uat-deviations` | `/uat-loop` only — the running application deviates from the feature or UI specs | Read the UAT report; `/build N` to fix, then `/uat-loop N` |
+| `uat-deviations` | `/uat-loop` only — the running application deviates from the feature or UI specs | Read the UAT report, then `/uat-loop N` — the UAT session already reset the phase's cells, so it restarts at the fix-build |
 
 **`/uat-loop N` is the same loop with the UAT stage appended.** The inner build → verify-arch → verify-qa cycle behaves identically, under the same cycle cap of 3; once both reviews are CLEAR it runs a **single** `/verify-uat` pass and stops on its verdict. There is no UAT retry loop, by design: an arch or QA gap means the code diverged from a decision already made, which the Coding Agent can close unattended, whereas a UAT deviation means the built thing does not do what was asked — a finding you should see before anything is changed in response to it. Every outer iteration is therefore human-sanctioned, which is also why no outer cap is needed. If a phase already reached both-CLEAR under `/build-loop`, `/uat-loop N` skips the inner cycle and goes straight to the UAT pass. The application must be running by the time the UAT pass starts; if it is not, `/uat-loop` pauses at that point with the start command and continues once you confirm it is up.
 
@@ -233,7 +233,14 @@ When both reviews are **CLEAR** → run `/verify-uat 1` if the phase is marked `
 
 ---
 
-**`/verify-uat {phase-number}`** — Start your application, then run this. The Product Agent exercises it against the feature specs and UI specs and writes a deviation report to `/.agentic-reviews/uat/`. Deviations route to `/build` (implementation doesn't match a clear spec), `/spec` (the spec is ambiguous or wrong), or `/ui` (the UI spec is). Fix, then re-run.
+**`/verify-uat {phase-number}`** — Start your application, then run this. The Product Agent exercises it against the feature specs and UI specs and writes a deviation report to `/.agentic-reviews/uat/`. Deviations route to `/build` (implementation doesn't match a clear spec), `/spec` (the spec is ambiguous or wrong), or `/ui` (the UI spec is). A build fix invalidates the phase's arch and QA verdicts, so the session resets both and points you at `/uat-loop {phase-number}` rather than a bare `/build`.
+
+Two variants take arguments instead of, or alongside, a phase number, and can be combined:
+
+- **`/verify-uat full`** — no phase number. A happy-path sweep of every phase already CLEAR at UAT, written to `uat-review-full-run-{R}.md`. Run it before a release or a demo, or after a phase that reworked shared foundations — not routinely, because the cost grows with the size of the product. Regular per-phase runs already carry a cheap regression check: the agent reaches features by navigating in from the real entry point, so a broken sign-in, nav, or shared layout is caught on the way.
+- **`/verify-uat {phase-number} manual`** — run after you did a human-driven manual acceptance testing; mention your findings and the agent writes up what you found as a normal deviation report. Your findings then route, get audited, and drive the fix loop exactly as agent findings do.
+
+A defect found this way is fixed in the phase that owns it, even if that phase is marked complete — reopening it in place. This beats carrying one phase's bugs into another's scope. This is the one exception to the never-reopen-the-phase rule, and it holds only for acceptance criteria that were already in force when the phase completed. Anything needing a new or changed criterion is scope, and goes forward through `/spec`. While a phase sits reopened, every later phase is blocked at its own prerequisites, so close it before moving on.
 
 When all applicable gates are **CLEAR** → move to `/build 2` and repeat.
 
@@ -264,7 +271,7 @@ For requirement changes or new requirements after phases have been built, or eve
 5. `/build {phase-N}` — continue running current in-progress phase or next phase if no phase is in-progress
 6. `/verify-arch {phase-N}` then `/verify-qa {phase-N}` — re-verify
   
-**Important:** Completed Phases are never reopened. If a spec change makes a completed phase's output incorrect, the fix is forward-only — Project Manager's `/plan` session will add a corrective item to the next pending phase or the currently in-progress phase. In-progress phases are modified only if the change directly affects code being built or can't be deferred.  
+**Important:** Completed Phases are never reopened for a spec change (the one exception, for defects UAT finds against criteria already in force, is under `/verify-uat` above). If a spec change makes a completed phase's output incorrect, the fix is forward-only — Project Manager's `/plan` session will add a corrective item to the next pending phase or the currently in-progress phase. In-progress phases are modified only if the change directly affects code being built or can't be deferred.  
 
 PRD versions get a minor bump (+0.1) for modifications to existing features and a major bump (+1.0) for new features or sections added.
 
@@ -294,6 +301,8 @@ PRD versions get a minor bump (+0.1) for modifications to existing features and 
 | `/verify-arch {phase-number}` | Architect Agent | Architecture gap report |
 | `/verify-qa {phase-number}` | QA Agent | Test coverage gap report |
 | `/verify-uat {phase-number}` | Product Agent | UAT deviation report against the running application |
+| `/verify-uat full` | Product Agent | Happy-path sweep across every UAT-CLEAR phase |
+| `/verify-uat {phase-number} manual` | Product Agent | Your own acceptance findings, written up as a deviation report |
 | `/ask [agent]` | Named agent (read-only) | Answers only; no file writes |
 
 Each agent handles its own session entry, prerequisite checks, and TRACKER.md updates on close.
@@ -522,7 +531,7 @@ Copy new agent MDs into `.claude/agents/`, command MDs into `.claude/commands/`,
 
 *UAT stage* — a per-phase gate owned by the Product Agent via `/verify-uat`, exercising the running application against the feature and UI specs and writing a deviation report to `/.agentic-reviews/uat/`. `/uat-loop` is the orchestrated form (`/build-loop` plus a single UAT pass) and is the one place the orchestrator may spawn the Product agent. The Coding Agent now writes a runtime handle at `/.agentic-reviews/build/runtime-phase-{N}.md` so a UAT session knows where the application is.
 
-**Migration.** The first two additions are drop-in — no PRD, phase, code, or review changes are needed. The UAT stage needs one `/plan` run. It adds a `UAT:` line to each PHASES.md phase block, written by `/plan`, and a `UAT` column to TRACKER.md's Phase Status table, added automatically by the first agent to write the tracker under the new version — the same normalization path the `Handoff notes` → `Progress` migration used, with `/resume` as the deterministic backstop since it runs at the start of every session. Phase completion now requires UAT alongside the two automated reviews. Phases already marked `✓ complete` keep that status and are not reopened — they completed under the rules in force at the time, and the forward-only rule applies here as everywhere else.
+**Migration.** The first two additions are drop-in — no PRD, phase, code, or review changes are needed. The UAT stage needs one `/plan` run. It adds a `UAT:` line to each PHASES.md phase block, written by `/plan`, and a `UAT` column to TRACKER.md's Phase Status table, added automatically by the first agent to write the tracker under the new version — the same normalization path the `Handoff notes` → `Progress` migration used, with `/resume` as the deterministic backstop since it runs at the start of every session. Phase completion now requires UAT alongside the two automated reviews. Phases already marked `✓ complete` keep that status — they completed under the rules in force at the time, and a gate they never had is not applied to them retroactively.
 
 If you skip the re-plan, nothing breaks: phases with no `UAT:` line simply complete on the two automated reviews, exactly as they did in v0.5.2. But that is a gate silently not running, and `✓ complete` will mean something different from what it means in a migrated project — so `/resume` and `/sitrep` warn until you run `/plan`. Where UAT applicability is genuinely unclear, `/plan` proposes `applicable` and lets you downgrade it: an unnecessary UAT pass costs a session, a wrongly skipped one costs you the last human-facing gate before a phase is called done.
 
