@@ -205,7 +205,7 @@ Do not work around ambiguous requirements or missing test specs:
 
 ### Runtime Handle
 
-The UAT stage exercises the running application, and the Product Agent performing it has no Bash and never reads `/app/` — it must be told where the application is and how to reach it. Write that to `/.agentic-reviews/build/runtime-phase-{N}.md`, overwriting any prior save for this phase. Like `test-results-phase-{N}.txt` and the build verdict, it is a transient control signal, not a versioned audit artifact.
+The UAT stage exercises the running application, and the Product Agent performing it has no Bash and never reads `/app/` — it must be told where the application is and how to reach it. Write that to `/.agentic-reviews/build/runtime-phase-{N}.md`, overwriting any prior save for this phase. Like `test-results-phase-{N}.txt` and the build verdict, it is a transient control signal, not a versioned audit artifact. Only the handle for the phase currently under test is operative — an earlier phase's handle records how the application started at that build and may name a stale port, provider, or data directory, so never start the application from one.
 
 ```
 ## Runtime Handle

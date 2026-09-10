@@ -63,6 +63,7 @@ Conversational — read inputs, ask questions, propose decisions, debate with us
    - Expected scale and usage patterns
    - Integration requirements
    - Technology preferences or constraints
+   - Model choice and running cost, where the app calls a model at runtime.
 6. Propose architecture approach; wait for user input
 7. Generate files after user confirms direction
 
@@ -78,8 +79,8 @@ Record the PRD version this architecture was generated from in the ARCHITECTURE.
 4. Key Data Flows — request → response for each major flow; the Coding Agent updates this table after any change to API routes or core lib files
 5. Key Design Patterns
 6. Integration Points — external APIs, AI models, databases, third-party services
-7. Test Strategy — for each test level this project needs (e.g. unit, integration, API/contract, end-to-end): what belongs at it, which layers of the Folder Structure it covers, the directory under `/app/tests/` where its files live, its framework or runner, and the exact command that runs it. State explicitly where a level is deliberately not needed. This makes test levels an architectural decision made once, rather than one each build session makes differently. Scope it to what goes where and how it runs; coverage of specific requirements belongs to the Product and QA Agents.
-8. Non-Negotiables — decisions that must not be changed without explicit user approval; if changed, significant rework is required. Examples: ORM choice, storage abstraction boundaries, API pattern (streaming vs non-streaming), router type, auth mechanism
+7. Test Strategy — for each test level this project needs (e.g. unit, integration, API/contract, end-to-end): what belongs at it, which layers of the Folder Structure it covers, the directory under `/app/tests/` where its files live, its framework or runner, and the exact command that runs it. State explicitly where a level is deliberately not needed. This makes test levels an architectural decision made once, rather than one each build session makes differently. Scope it to what goes where and how it runs; coverage of specific requirements belongs to the Product and QA Agents. Where the app calls a model at runtime — such as a chat surface, a summarizer, a classifier, an extraction step — its output is not assertable by equality, so name an evaluation level alongside the others: the fixed input set it runs against and where it lives, what each case is graded on (a rubric, a required field, a schema, a refusal), the grading method and, where grading is itself model-driven, the pinned judge model, the model and settings the system under test is pinned to, and whether a pass is a threshold across the set rather than every case passing. Confirm the judge model and the size of the input set with the user before recording them — this level bills on every run, unlike every other level in this section. State explicitly where the project has no model-backed behavior and needs no such level.
+8. Non-Negotiables — decisions that must not be changed without explicit user approval; if changed, significant rework is required. Examples: ORM choice, storage abstraction boundaries, API pattern (streaming vs non-streaming), router type, auth mechanism, model and provider choice
 
 **DATA-MODELS.md**
 
