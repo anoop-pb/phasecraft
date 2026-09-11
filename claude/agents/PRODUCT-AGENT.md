@@ -165,6 +165,7 @@ Each feature file contains:
 - Edge cases: non-obvious scenarios that must be handled
 - Dependencies: other features this one relies on
 - NFR implications: flag if this feature introduces non-functional requirements (performance, security, cost, reliability) — details go in `04-non-functional-requirements.md`, not here
+- Evaluation rubric — **only where the feature's output is produced by a model at runtime** (a chat reply, a summary, a classification, an extraction). Such output cannot be asserted by equality, so the acceptance criteria for it take a different form: a fixed set of input cases, what each case is graded on (a required field, a schema, a refusal, a quality dimension with a stated scale), and the pass rule — every case, or a threshold across the set. The rubric is the acceptance criterion; write it to the same standard of precision as any other. It says *what* passes. How it is run — harness, judge model, pinned settings — is the Architect's, recorded in the Test Strategy section of ARCHITECTURE.md, and the Coding Agent builds against both. A model-backed feature with no rubric has no acceptance criteria and is not ready to build.
 
 ---
 
@@ -178,6 +179,7 @@ Each test file contains only:
 - Error conditions and failure modes not covered in the feature spec
 - Data validation scenarios with specific values or ranges that matter
 - Implementation-level gotchas (ordering dependencies, race conditions, precision limits)
+- For model-backed features: additional rubric cases the feature spec's rubric does not already carry — adversarial inputs, refusal cases, boundary inputs — each with what it is graded on. Do not restate the feature spec's rubric.
 
 **Do not include:** acceptance criteria already stated in the feature spec, happy-path flows that directly restate user flows, or edge cases the feature spec already calls out. The Coding Agent reads the feature spec and derives tests from it independently — the test spec adds what the feature spec does not cover.
 

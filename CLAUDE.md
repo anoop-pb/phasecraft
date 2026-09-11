@@ -4,7 +4,7 @@
 
 **First exception — the orchestrator.** The orchestrator agent (commands: `/build-loop` and `/uat-loop`) is authorized to spawn bounded workers (coding, architect, qa, and — for `/uat-loop` only — product) via the Agent tool. Each adopts the orchestrator identity directly in the main session via its `agent:` field with **no** `context: fork`, and from there spawns the workers. No other agent or command may spawn subagents, and the orchestrator must never itself be forked or run as a subagent — a forked/subagent context cannot spawn further workers.  For `/uat-loop`, which appends the UAT stage to the same loop, it may additionally spawn the product agent to run `/verify-uat`. The orchestrator may spawn only those four agents, only for those workflows, and only in Autonomous Mode (see `AGENT-STANDARDS.md` → Autonomous Mode).
 
-**Second exception — Operator Mode.** When the user explicitly asks the main session to act as their **operator assistant** (no slash command run, no agent identity adopted), the main session may spawn any PhaseCraft agent **except the orchestrator** via the Agent tool, each in its own context, with a task prompt that explicitly states the agent is running in Operator Mode (see `AGENT-STANDARDS.md` → Operator Mode). The operator works through specifics with the agents on the user's behalf within the user's stated intent, pausing to ask the user only when a decision would conflict with or modify that intent. That intent is recorded in a confirmed intent file under `/intents/` before any work begins — the operator's one write target, and a path no agent reads or writes (see `AGENT-STANDARDS.md` → Operator Mode → The Intent File). The orchestrator is never spawned and neither `/build-loop` nor `/uat-loop` is used in operator sessions — the operator performs the build → verify → UAT sequencing itself.
+**Second exception — Operator Mode.** When the user explicitly asks the main session to act as their **operator assistant** (no slash command run, no agent identity adopted), the main session may spawn any PhaseCraft agent **except the orchestrator** via the Agent tool, each in its own context, with a task prompt that explicitly states the agent is running in Operator Mode (see `AGENT-STANDARDS.md` → Operator Mode). The operator works through specifics with the agents on the user's behalf within the user's stated intent, pausing to ask the user only when a decision would conflict with or modify that intent. That intent is recorded in a confirmed intent file under `/intents/` before any work begins — a path no agent reads or writes (see `AGENT-STANDARDS.md` → Operator Mode → The Intent File). The operator may also spawn the Research Agent, the only agent permitted to search the web; it receives a question only, never reads a project file, and writes its finding to `/research/`, which the operator alone reads (see `AGENT-STANDARDS.md` → Operator Mode → Research). The orchestrator is never spawned and neither `/build-loop` nor `/uat-loop` is used in operator sessions — the operator performs the build → verify → UAT sequencing itself. Pushing a branch or opening a PR happens only in an operator session and only as the intent file's `Delivery` line permits; no slash command does either.
 
 A lifecycle-staged multi-agent framework for building software with AI. Each stage is worked on by one or more focused agents with explicit file access boundaries. Agents do not drift into each other's concerns.
 
@@ -73,6 +73,17 @@ PhaseCraft version at last update: —
 
 (phases added by /plan)
 ```
+
+### Model Notes
+
+Directly below the Phase Status table, an optional free-form list:
+
+```
+Model notes:
+- Phase 3 built on Sonnet (operator, 2026-08-14) — mechanical scope, fully specified
+```
+
+One line per phase whose build ran on a model other than the session default, or where the operator chose the Coding Agent's model per AGENT-STANDARDS → Operator Mode. Written by the operator; carried forward, never cleared. It exists so that a verified phase's status can be read alongside the model that produced it. Absent when nothing has been recorded — no migration adds it.
 
 ### The Progress Column
 

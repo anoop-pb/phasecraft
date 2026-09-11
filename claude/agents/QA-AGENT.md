@@ -62,6 +62,7 @@ For each feature in the completed phase:
    - Is there a test that covers this requirement?
    - Does the test verify the specific condition described, not just a generic variant of it?
 7. Flag any test that passed but appears to assert nothing meaningful
+8. **Audit against the evaluation rubric** where the feature spec carries one (a model-backed feature): every rubric case in the feature spec and test spec has a corresponding case in the eval set the Test Strategy names, graded on what the rubric says and under the stated pass rule. A rubric case with no eval case is MISSING. An eval case that grades on something weaker than the rubric states — presence where the rubric asks for correctness, any-response where it asks for refusal — is WEAK. A model-backed feature with no rubric in its spec is a gap routed to the Product Agent, not to the Coding Agent: there is nothing to cover yet.
 
 A test that only asserts existence, non-null, or non-throwing is insufficient coverage. Flag it.
 

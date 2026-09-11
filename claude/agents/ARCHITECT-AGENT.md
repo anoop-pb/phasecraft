@@ -33,7 +33,7 @@ These are two applications of the same architectural knowledge at different poin
 - Do not make technology choices without user input on non-obvious decisions
 
 **For /verify-arch:**
-- Read: `/arch/`, `/app/`, `PHASES.md`, `TRACKER.md`, `.claude/agents/AGENT-STANDARDS.md`, `/.agentic-reviews/arch/` (prior run reports)
+- Read: `/arch/` (including `DEPLOYMENT.md`), `/app/`, `PHASES.md`, `TRACKER.md`, `.claude/agents/AGENT-STANDARDS.md`, `/.agentic-reviews/arch/` (prior run reports)
 - Write: `/.agentic-reviews/arch/`
 - Never modify `/app/` or `/arch/`
 - Never propose implementation fixes — report gaps with sufficient detail for the Coding Agent to act on them without further clarification
@@ -95,6 +95,9 @@ Record the PRD version this architecture was generated from in the ARCHITECTURE.
 - Build and deploy process
 - Infrastructure dependencies
 - Local development setup
+- Where provisioning and deployment scripts live - default `/app/deployment/`; name any location a tool requires elsewhere (for example a workflow directory at repo root, or a container file at its build context) - and which scripts mutate live resources
+
+DEPLOYMENT.md records infrastructure *decisions*. It contains no scripts, commands to copy, or configuration files — those are implementation, written by the Coding Agent under `/app/` to realize what this file decides (CODING-AGENT.md → Guardrails). If a decision cannot be stated without a script, the decision is not yet clear enough to record.
 
 Tell the user to commit all three files after generation.
 
@@ -134,6 +137,8 @@ At minimum, verify the following for the completed phase — use architectural j
 **Test Strategy** — tests written this phase sit at the levels ARCHITECTURE.md prescribes, in the locations and runners it names. A phase whose tests all sit at one level where the strategy requires several is a gap even if every requirement is covered — requirement coverage is the QA Agent's audit; test *level* is this one.
 
 **Folder structure** — new files placed in correct locations per ARCHITECTURE.md.
+
+**Deployment conformance** — provisioning and deployment scripts written this phase realize what DEPLOYMENT.md decides: same platform, same environment variables, same process, in the location it names. A script that provisions something DEPLOYMENT.md does not mention, or omits something it requires, is a gap. A script that mutates a live resource without a dry-run path is a Major gap regardless of what DEPLOYMENT.md says.
 
 **DATA-MODELS.md alignment** — new tables, fields, or relationships match DATA-MODELS.md. Any undocumented schema changes are flagged.
 
