@@ -68,7 +68,7 @@ Whatever the review preference, these always come to you:
 
 - Any decision the intent does not settle.
 - UAT deviations rated Major or Critical, and any the operator is unsure about.
-- Security decisions, and changes to Non-Negotiables — architecture decisions marked as costly to reverse.
+- Changes to Non-Negotiables — architecture decisions marked as costly to reverse — and security decisions that change cost, the risk you accept, or what the app's end users must do.
 - A phase that fails the same gate twice.
 - A proposed corrective-only phase, for fixes that have piled up.
 - Moving a task to a cheaper model.

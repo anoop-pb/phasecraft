@@ -22,7 +22,7 @@ Terms:
 - **Worker** — any role other than operator, spawned by the operator for one task.
 - **Phase** — the unit of work. A set of features built and verified together.
 - **Gate** — a verification step a phase must pass.
-- **Fix-build** — a developer run that fixes the findings routed to it in the latest review or UAT reports.
+- **Fix-build** — a developer run that fixes the findings routed to it in the latest review or UAT reports, or applies the spec or architecture changes made to settle a finding.
 - **Brief** — a file the operator writes to carry the user's confirmed direction into a worker task.
 - **Tracker** — `TRACKER.md` at the repo root. It records where things stand: phase status, verification state, in-flight work, open decisions. Only the operator writes it.
 - **Repo map** — `REPO-MAP.md` at the repo root. It records where everything lives. Recorded locations and conventions are binding. Where it is silent, a session chooses, then records the choice through the operator.
@@ -48,6 +48,7 @@ A phase passes five gates in order: build, architecture review, security review,
 - While a phase is in progress, any change to its code sends it back through gates two to five. A re-run review covers its own prior gaps, the files the fix changed, and the code and features those changes affect.
 - Once complete, a phase is frozen. A later phase that changes earlier code is reviewed as the later phase. Regressions are caught by the full test suite in every build, and by the happy-path check that opens every UAT of the earlier features the phase's specs name as preconditions or shared surfaces.
 - All correctives are forward. A defect found later against a completed phase becomes work in the phase in progress, the next phase, or a corrective-only phase.
+- A review or UAT confirms each carry-forward fix its task names is closed; one still open is a gap in its report. This is not a re-review of the earlier phase.
 - Every Critical and Major finding from a review or UAT is fixed in one batch. One may be left unfixed only when its fix needs a spec or architecture change first, or falls outside the phase's scope, and the operator agrees — or the user, where the confirmed intent does not settle it. It then becomes a carry-forward fix.
 - A phase that fails the same review or UAT twice after a fix stops and goes to the user.
 

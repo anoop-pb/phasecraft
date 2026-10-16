@@ -20,14 +20,15 @@ Baseline for all code and tests in this repo. The user edits or replaces this fi
 
 ## Stack-specific
 
-{Empty until filled. The user may fill it at onboarding; otherwise the developer appends a section for the chosen stack at the first build — formatting, linting, naming, test patterns, and the commands that enforce them, including lint rules for function length, complexity, and duplication where the linter supports them — and reports it.}
+{Empty until filled. The user may fill it at onboarding; otherwise the developer appends a section for the chosen stack at the first build, and reports it — formatting, linting, naming, test patterns, and the commands that enforce them. Whoever fills it, the section turns on lint rules for function length, complexity, and duplication where the linter supports them, and excludes tmp/ from test, lint, and type-check discovery.}
 
 ## Verification commands
 
-The operator runs these from the code root after every build and fix-build. A non-zero exit from any of them fails the build. Filled with the stack section.
+The operator runs these from the code root after every build and fix-build. A non-zero exit from any of them fails the build. Filled with the stack section, and updated when a phase adds a test level or tool.
 
 - Full test suite: {command}
 - Lint: {command}
 - Format check: {command}
 - Type check: {command, or — where the stack has none}
 - Dependency audit: {command, or — where the stack has none}
+- Evaluation: {command, or — where the app calls no model at runtime. Runs only in builds that change a feature with an evaluation rubric.}
