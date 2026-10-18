@@ -157,7 +157,9 @@ def find_tag(root: Path, v: str) -> str:
 
 
 def git(root: Path, *argv) -> list:
-    r = subprocess.run(["git", "-C", str(root), *argv], capture_output=True, text=True)
+    # quotepath=off: git otherwise quotes non-ASCII paths, and they would not match the prefix.
+    r = subprocess.run(["git", "-C", str(root), "-c", "core.quotepath=off", *argv],
+                       capture_output=True, text=True)
     if r.returncode != 0:
         die(f"git {' '.join(argv)} failed: {r.stderr.strip()}")
     return [ln.strip() for ln in r.stdout.splitlines() if ln.strip()]
@@ -211,34 +213,37 @@ def cmd_check(args):
     if note is None:
         die(f"{notes[0]} not found — the product manager writes it", 1)
     rows = note_rows(note)
-    bad = [f for f, t in rows if t not in TYPES]
-    for f in bad:
-        print(f"row without a valid Type (new | changed | clarified): {f}")
-    if bad:
-        sys.exit(1)
+    problems = [f"row without a valid Type (new | changed | clarified): {f}"
+                for f, t in rows if t not in TYPES]
     if not args.frm:
+        report(problems)
         print(f"first version: {note.name} exists, {len(rows)} typed row(s); no comparison")
         return
     step = version_step(args.frm, args.to)
-    if rows:
-        expected = BUMPS[max(TYPES[t] for _, t in rows)]
+    typed = [t for _, t in rows if t in TYPES]
+    if typed:
+        expected = BUMPS[max(TYPES[t] for t in typed)]
         if step != expected:
-            print(f"version step v{args.frm} -> v{args.to} is {step or 'not a single bump'}; "
-                  f"highest row type requires a {expected} bump")
-            sys.exit(1)
+            problems.append(f"version step v{args.frm} -> v{args.to} is "
+                            f"{step or 'not a single bump'}; "
+                            f"highest row type requires a {expected} bump")
     prefix = (prd / "sections").as_posix() + "/"
     changed = git(root, "diff", "--name-only", find_tag(root, args.frm), "--", prefix)
     changed += git(root, "ls-files", "--others", "--exclude-standard", "--", prefix)
     changed = {p[len(prefix):] for p in changed if p.startswith(prefix)}
     listed = {f for f, _ in rows}
-    missing, extra = sorted(changed - listed), sorted(listed - changed)
-    for p in missing:
-        print(f"changed but not in change note: {p}")
-    for p in extra:
-        print(f"in change note but not changed: {p}")
-    if missing or extra:
-        sys.exit(1)
+    problems += [f"changed but not in change note: {p}" for p in sorted(changed - listed)]
+    problems += [f"in change note but not changed: {p}" for p in sorted(listed - changed)]
+    report(problems)
     print(f"ok: {len(changed)} changed section file(s), all in {note.name}")
+
+
+def report(problems):
+    """Print every problem found, then exit 1 if there were any."""
+    for p in problems:
+        print(p)
+    if problems:
+        sys.exit(1)
 
 
 def main():

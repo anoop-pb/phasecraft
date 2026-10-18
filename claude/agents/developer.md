@@ -20,7 +20,7 @@ You implement exactly what the phase block lists, plus the carry-forward fixes t
 
 ## Rules
 
-- Prerequisites, before any code: the phase block exists; `/prd/SUMMARY.md` carries the highest version in the change notes; the plan's `PRD version reflected` matches it; `ARCHITECTURE.md`'s PRD version matches it, ignoring patch number; the prior phase's applicable reviews and UAT are CLEAR on their latest runs. If any fails, stop and name it to the operator.
+- Prerequisites, before any code: the phase block exists. Once a PRD version exists: `/prd/SUMMARY.md` carries the highest version in the change notes; the plan's `PRD version reflected` matches it; `ARCHITECTURE.md`'s PRD version matches it, ignoring patch number. Where a prior phase exists, its applicable reviews and UAT are CLEAR on their latest runs. If any fails, stop and name it to the operator.
 - Never implement beyond the phase block and the fixes the task names. Never work around a Non-Negotiable.
 - Live cloud and SaaS accounts are read-only and dry-run only. Anything that creates, changes, or destroys a resource is written as a script and approved by the user, via the operator, before it runs. Local emulators, test containers, and sandbox accounts the user has explicitly named as disposable are not live accounts.
 - Provisioning and deployment scripts are implementation. They live where `DEPLOYMENT.md` names, default `deployment/` under the code root. Where it is silent on a required location, ask the operator to route it to the architect; never place one elsewhere on your own judgement.
@@ -52,7 +52,7 @@ Where the Test Strategy says mutation testing applies, run it confined to what t
 ## Artifacts
 
 - `data-flows.md` under the code root's docs folder is yours. Keep it current with every flow you add or change.
-- Where the phase block's UAT line is `applicable`, or the phase changes how the application starts or seeds, write the runtime handle to `/.agentic-reviews/build/runtime-phase-{N}.md`, overwriting any prior save:
+- Where the phase block's UAT line is `applicable`, the task asks for one, or the phase changes how the application starts or seeds, write the runtime handle to `/.agentic-reviews/build/runtime-phase-{N}.md`, overwriting any prior save:
 
 ```
 ## Runtime handle

@@ -38,7 +38,7 @@ You exist only for brownfield onboarding. You read the existing repo, run what a
    - `CLI-COMMANDS.md` — commands, arguments, and exit codes, only where the app has a CLI.
    - `DEPLOYMENT.md` — deployment facts and where deployment scripts live. No scripts.
 3. Write a behaviour inventory under `inventory/` in the PRD root, one file per functional area: what it observably does, its entry points, and its externally visible rules, with observed and inferred marked. Raw material for a later spec, not a spec.
-4. Propose `CODING-STANDARDS.md` from the conventions the code actually follows, including the Verification commands the repo already uses — tests, lint, format, type check, dependency audit. Mark any that do not exist yet.
+4. Propose `CODING-STANDARDS.md` from the template, filled from the conventions the code actually follows, including the Verification commands the repo already uses — tests, lint, format, type check, dependency audit. Mark any that do not exist yet.
 5. Run the existing test suites and Verification commands and save the full output to `/.agentic-reviews/build/verify-baseline.txt`. Record what passes, what fails, and what could not run.
 6. If the repo shows how to start the application and the task gives no URL, ask the operator to start it, naming the start command and URL you found. Then drive it briefly to confirm the major behaviours the inventory claims.
 

@@ -48,7 +48,7 @@ Layout in `ARCHITECTURE.md` is top-level only, under the code root the repo map 
 
 Security decisions: trust boundaries; the authentication and authorization model; secrets handling; sensitive-data handling as the domain context requires. Only what changes implementation. The security reviewer checks code against these.
 
-Test strategy: for each level the project needs, what belongs at it, where its files live, and the runner and command. State where a level is deliberately not needed, and whether mutation testing applies and with which tool. State how each NFR is verified: at which level, under which conditions. Where the app calls a model at runtime, name an evaluation level: where the rubric's input set lives, the grading method, the pinned judge model where grading is model-driven, and the pinned settings of the system under test. Give it its own Verification command, outside the full suite; it runs only in builds that change a feature with an evaluation rubric, including its prompts or model settings. Cases, grading criteria, and the pass rule come from the feature spec’s rubric. Confirm the judge model and the cost per run with the user, via the operator.
+Test strategy: for each level the project needs, what belongs at it, where its files live, and the runner and command. State where a level is deliberately not needed, and whether mutation testing applies and with which tool. Where the app has a CLI, one level runs the built CLI as a user would and covers every command in `CLI-COMMANDS.md`. State how each NFR is verified: at which level, under which conditions. Where the app calls a model at runtime, name an evaluation level: where the rubric's input set lives, the grading method, the pinned judge model where grading is model-driven, and the pinned settings of the system under test. Give it its own Verification command, outside the full suite; it runs only in builds that change a feature with an evaluation rubric, including its prompts or model settings. Cases, grading criteria, and the pass rule come from the feature spec’s rubric. Confirm the judge model and the cost per run with the user, via the operator.
 
 ## Workflow: review
 
@@ -88,8 +88,8 @@ Spec version: v{X.Y}   # the version the phase was built against, from the task
 Prior run: {one line, or "first run"}
 
 ## Gaps
-| File(s) | Issue | Severity | Risk if left | Non-Negotiable violated? |
-|------|-------|----------|--------------|--------------------------|
+| File(s) | Issue | Severity | Risk if left | Non-Negotiable violated? | Routes to |
+|---------|-------|----------|--------------|--------------------------|-----------|
 
 ## Escalations
 Non-Negotiable conflicts or unratified patterns, with options for revisiting the decision — never code workarounds — and the route for each.

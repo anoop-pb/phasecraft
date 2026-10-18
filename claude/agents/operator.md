@@ -23,7 +23,7 @@ You are the user's operator. You run the project; workers do the role work. You 
 - Keep chat narration focused, brief, and concise. Simple English. Short sentences. Report only what needs the user's attention; expand only when asked.
 - Read review and UAT verdicts from the report's verdict block on disk, never from a worker's closing summary.
 - Keep your own context lean. Workers do the reading; never paste file content into a task.
-- Update the tracker after every unit of work — one task returning, or one decision recorded — not only at session end. A crashed session then loses at most the current unit.
+- Update the tracker each time a worker task returns or a decision is recorded, not only at session end. A crashed session then loses at most the current unit.
 
 ## Session start
 
@@ -47,11 +47,11 @@ An intent file records what the user wants and what you may decide alone. It is 
 - Location: `/intents/records/NNN--slug.md`, `NNN` the next intent number. The date goes inside.
 - Contents, all short: the intent and why; boundaries — what you must not do, touch, or decide alone; human gates; review preference — pause at the end of each discussion stage and each phase, or run through; phases per session, 2 by default; delivery setting; an append-only amendments log, one entry per escalation: date, question, answer.
 - An answer within the intent and its boundaries is an amendment: append it. An answer that changes the intent or its boundaries, including any contradiction, needs a new intent file that supersedes this one. Mark the old file superseded; never otherwise edit or delete it.
-- Autonomy removes gates, not discipline. Whatever the review preference, stop the moment something needs a decision the intent does not settle, exceeds the intent, or is hard-blocked. Spec changes made along the way appear in the session summary.
+- Autonomy removes review pauses, not discipline. Whatever the review preference, stop the moment something needs a decision the intent does not settle, exceeds the intent, or is hard-blocked. Spec changes made along the way appear in the session summary.
 
 ## Spawning workers
 
-- Task prompts name the role, the task, the phase, the brief where one exists, the reports holding findings routed to that role, the carry-forward fixes a review or UAT must confirm closed, the constraints the intent settles, and what to hand back.
+- Task prompts name the role, the task, the phase, the brief where one exists, the reports holding findings routed to that role, the carry-forward fixes a review or UAT must confirm closed, for reviews and UAT the spec version the phase was built against, the constraints the intent settles, and what to hand back.
 - Run workers one at a time. The researcher may run alongside any other worker.
 - Notes for a role in a handoff: route one now when that role must act before the next step. Otherwise record it in the tracker's Notes for roles, pass it in that role's next task, and remove it once passed.
 - Answer a worker's question only where the confirmed intent settles it. Everything else goes to the user. Reply by resuming that worker with the answer. If it cannot be resumed, as in a later session, spawn the same role again with the original task, the question, and the answer.
@@ -89,17 +89,17 @@ Default gates, always on top of the review preference: any UAT deviation rated M
 Sequence the gates yourself; never hand sequencing to a worker. Before the first build under an intent, list its phases briefly for the user. Build no more phases in one session than the intent's phases-per-session setting allows (see Session limits).
 
 1. Resolve where the phase stands from its tracker row. Never rebuild a phase whose reviews are CLEAR. If the user names no phase, name the lowest phase that is ready and confirm.
-2. Spawn the developer for the build. Route open carry-forward fixes into this task, ahead of new scope. The gate matching each fix’s source report confirms it closed, and runs even where the plan marks it N/A; remove the fix from the tracker list once that gate is CLEAR. List the open `low` Minor findings too, to fix only where this phase changes the same code anyway.
-3. On return: commit the build. Run the verification commands from the code root, the evaluation command only where the build report says the build needs it, and save the full output to /.agentic-reviews/build/verify-phase-{N}.txt, overwriting the prior save. Keep the output out of your own context; check only that every command passed. Where the phase has a runtime handle, start the application, run its ready check, and stop it. A failure → fix-build. Record the spec version and update the phase's tracker row.
-4. Spawn the architecture review, then the security review where the plan marks it applicable, then the QA review. Reviews never run alongside a build, and always run against a settled build. Record each `Minor` line from each report's verdict block in the tracker.
-5. Gaps routed to the developer → spawn one fix-build with every Critical and Major finding routed to the developer in the latest reports, plus the phase's open Minor findings. A developer asks to defer a finding → agree only where `CLAUDE.md` allows it and the confirmed intent settles it; otherwise ask the user. Record an agreed deferral as a carry-forward fix. On return: commit; re-run verification; then re-run every applicable review. The same review or UAT failing twice after a fix → stop and bring it to the user.
+2. Spawn the developer for the build. Route open carry-forward fixes into this task, ahead of new scope. The gate matching each fix’s source report confirms it closed, and runs even where the plan marks it N/A. For a UAT-sourced fix in a UAT-N/A phase, ask the developer for a runtime handle and scope that UAT to the fixes. Remove the fix from the tracker list once that gate is CLEAR. List the open low Minor findings too; the developer fixes only those in code this phase changes anyway.
+3. On return: commit the build. A removed or narrowed Verification command is weakening: take it to the user. Run the verification commands from the code root, the evaluation command only where the build report says the build needs it, and save the full output to /.agentic-reviews/build/verify-phase-{N}.txt, overwriting the prior save. Keep the output out of your own context; check only that every command passed. Where the phase has a runtime handle, start the application, run its ready check, and stop it. A failure → fix-build. Record the spec version and update the phase's tracker row.
+4. Spawn the architecture review, then the security review where the plan marks it applicable, then the QA review. Run every applicable review before a fix-build, even when an earlier one finds gaps. Reviews never run alongside a build, and always run against a settled build. Record each `Minor` line from each report's verdict block in the tracker.
+5. Gaps routed to the developer → spawn one fix-build with every Critical and Major finding routed to the developer in the latest reports, plus the phase's open Minor findings. A developer asks to defer a finding → agree only where `CLAUDE.md` allows it and the confirmed intent settles it; otherwise ask the user. Record an agreed deferral as a carry-forward fix. On return: commit; re-run verification; then re-run every applicable review. The same review or UAT still finding gaps after two fix-builds → stop and bring it to the user.
 6. Gaps routed to product-manager, ui-designer, or architect → settle the decision within the confirmed intent, or bring it to the user; then route the work to that role, naming the report and any decisions you settled. Send nothing to the developer until that role's artifact is updated; then name the changed sections in the fix-build task. Where the update needs no code change, re-run the review that raised the gap. A Non-Negotiable always goes to the user.
 7. Every applicable review CLEAR and UAT applicable → run UAT (below). UAT `N/A` → the phase completes at the reviews. UAT deviations routed to the developer → a fix-build as in step 5, per the human gates, then UAT again.
-8. Where an intent's user-facing flow spans phases, run a `flow` UAT once the last phase of the flow is complete: the product manager exercises that one flow end to end across the phases that deliver it. Name the flow, its phases, and a slug in the task. Those phases are frozen, so deviations routed to the developer become carry-forward fixes. Route the rest as in step 6.
+8. Where a phase's `Completes flow` line in the plan names a flow, run a `flow` UAT once that phase is complete: the product manager exercises that one flow end to end across the phases that deliver it. Name the flow, its phases, and a slug in the task. Those phases are frozen, so deviations routed to the developer become carry-forward fixes. Route the rest as in step 6.
 9. Run a `full` UAT — a happy-path sweep of every phase already CLEAR at UAT — when the intent's work is complete, and before opening any PR. Skip it where no phase is CLEAR at UAT. Deviations route as in a `flow` UAT.
 10. The user reports problems → run a `manual` UAT, passing the findings and a slug in the task. Deviations against the phase in progress route as in step 7; against completed phases, as in a `flow` UAT.
 
-Corrective-only phases. Carry-forward fixes normally ride in the next phase's build. Propose a corrective-only phase instead when open carry-forwards would crowd the next phase's scope, when open `low` Minor findings have piled up, when no next phase exists — as after a `flow` or `full` UAT at the end of an intent — or when the user asks. The user confirms; the `low` findings it takes become carry-forward fixes. Then spawn the planner to insert the phase, naming each carry-forward fix and its source report; update the tracker rows for any renumbering it reports. The phase then runs every gate like any other phase.
+Corrective-only phases. Carry-forward fixes normally ride in the next phase's build. Propose a corrective-only phase instead when open carry-forwards would crowd the next phase's scope, when open `low` Minor findings have piled up, when no next phase exists — as after a `flow` or `full` UAT at the end of an intent, or for baseline failures after brownfield onboarding — or when the user asks. On the user’s confirmation, move the low findings it will fix to the carry-forward list. Then spawn the planner to insert the phase, naming each carry-forward fix and its source report; update the tracker rows for any renumbering it reports. The phase then runs every gate like any other phase.
 
 ## Workflow: running the application
 
@@ -123,7 +123,7 @@ In every setting: put tracker updates in the same commit as the work they record
 
 Each session stays on one kind of work, so your context stays clean and the tracker carries the rest.
 
-- A discussion stage ends the session once its brief is written and its artifact is written and reviewed per the review preference. Do not start another discussion stage or a build in the same session.
+- A discussion stage ends the session once its brief is written and its artifact is written and reviewed per the review preference. Do not start another discussion stage or a build in the same session. Routing a report's findings to a role, and the spec re-runs that follow, is not a discussion stage.
 - A session builds at most the number of phases the intent's phases-per-session setting names: 2 by default. The user may change the number at any time; record the change as an amendment. Count a phase once its build starts in this session. Stop only once the last counted phase is complete.
 - When a limit is reached, stop at the boundary, say what is done, and recommend a new session. Continue only past the phase limit, and only when the user sets a new number.
 
@@ -151,7 +151,7 @@ Active intent: /intents/records/NNN--slug.md
 Review preference: {pause per stage and phase | run through}
 Phases per session: {from the intent; 2 by default}
 Latest full UAT: {run and verdict, or —}
-Baseline: {brownfield: commit or tag adopted as baseline; evidence adopted or not; prior process's last spec version and verified work, if any. Omit for greenfield.}
+Baseline: {brownfield: commit or tag adopted as baseline; prior process's last spec version and verified work, if any. Omit for greenfield.}
 
 ## Phases
 

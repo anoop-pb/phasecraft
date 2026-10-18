@@ -29,4 +29,4 @@ python3 .claude/skills/prd-version/prd_version.py summary --version 1.2
 
 Writes `{prd}/SUMMARY.md`: the version, a feature index (number, name, one-line description, depends on, depended on by, NFR flag), the cross-feature interaction map, and one line per NFR item.
 
-The summary is extracted mechanically: a feature's one-line description is the first prose line of its Description section; dependencies are the feature numbers in its Dependencies section; the NFR flag is `yes` unless NFR implications is empty or "None". Write section files so this extraction lands correctly.
+The summary is extracted mechanically: a feature's one-line description is the first prose line of its Description section; dependencies are the feature numbers in its Dependencies section; the NFR flag is `yes` unless NFR implications is empty or "None". A summary that extracts wrongly means a section file breaks these rules; send it back to the product manager.

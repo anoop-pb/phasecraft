@@ -1,6 +1,6 @@
 # Domain context
 
-Domain expertise every role assumes, in addition to its own role. Written by the operator at onboarding, refined as the domain is better understood. Framed as "Assume expertise in …", never "You are …" — roles already have identities.
+Domain expertise every role that reads this file assumes, in addition to its own role. Written by the operator at onboarding, refined as the domain is better understood. Framed as "Assume expertise in …", never "You are …" — roles already have identities.
 
 ---
 
