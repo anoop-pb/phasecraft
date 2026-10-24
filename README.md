@@ -22,11 +22,11 @@ PhaseCraft 2.0 is a major rewrite of PhaseCraft 0.7. There is no migration path.
 
 ## Getting started
 
-You need Claude Code, git, and Python 3. Pushing branches or opening PRs needs your code host's CLI, such as Github CLI (`gh`). UAT of a web interface uses Claude’s built-in browser, which is available when you run Claude Code in the Claude desktop app. A cloud session, such as a scheduled routine, can use the Playwright MCP server instead (see Maintenance and autopilot).
+You need Claude Code, git, and Python 3. Pushing branches or opening PRs needs your code host's CLI, such as GitHub CLI (`gh`). UAT of a web interface uses Claude’s built-in browser, which is available when you run Claude Code in the Claude desktop app. A cloud session, such as a scheduled routine, can use the Playwright MCP server instead (see Maintenance and autopilot).
 
 If your repo has been running another SDLC agentic process, finish or drop its work in flight first. Rename an existing CLAUDE.md or .claude/ folder with a -prior suffix.
 
-1. Copy `CLAUDE.md` from PhaseCraft to your repo root
+1. Copy `CLAUDE.md` from PhaseCraft to your repo root.
 2. Copy PhaseCraft's `claude/` folder to your repo root and rename the folder to `.claude/`.
 3. Start a Claude Code session in the repo. (`.claude/settings.json` sets `"agent": "operator"`, so every session starts as the operator.)
 4. Send a first message: say "onboard this project", or say what you want built. The operator checks the repo first. On a new repo it offers greenfield onboarding; on a repo with code, brownfield onboarding runs before anything else (see below). You confirm what it sets up.
@@ -60,8 +60,8 @@ specs → UI design → architecture → plan → per phase: build → architect
 - **Phases and gates.** The planner divides features into phases. Each phase passes up to five gates, in order: build, architecture review, security review, QA review, and UAT. Security review and UAT run where the plan says they apply. UAT drives a browser, so it covers web interfaces only. The build gate passes on verification output the operator produces itself, not on the developer's word. Any code change sends the phase back through its reviews.
 - **Findings.** Critical and Major findings are fixed in one batch, then reviewed again. Minor findings never block. A phase whose same gate still finds problems after two fixes comes to you.
 - **Completed phases are frozen.** A defect found later is fixed as forward work in a later phase.
-- **Wider UAT.** A user flow that spans phases is tested end to end once its last phase is complete. A full UAT runs when the intent's work is complete, and before any PR.
-- **Full architecture review.** On request, or in a scheduled maintenance run after new phases have completed, the architect reviews the whole codebase, across phases. It finds the drift, duplication, and eroded design that phase reviews cannot see. Its serious findings become carry-forward fixes.
+- **Wider UAT.** A user flow that spans phases is tested end to end once its last phase is complete. A full UAT runs when the intent's work is complete, and before a PR is opened for review or marked ready.
+- **Full architecture review.** On request, or in a maintenance run after new phases have completed, the architect reviews the whole codebase, across phases. It finds the drift, duplication, and eroded design that phase reviews cannot see. Its serious findings become carry-forward fixes.
 
 **Sessions stay short on purpose.** A session's context fills up with discussion and worker handoffs. As it fills, quality drops. When Claude Code compacts it, detail is lost. So each discussion stage gets its own session, and a build session covers at most 2 phases by default. You can change that number in the intent. At a limit, the operator stops at a clean boundary and asks you to start a new session. The tracker and the other files carry everything across, so nothing is lost.
 
@@ -82,7 +82,7 @@ Your answers to the operator's questions are appended to the file. A change of i
 Irrespective of the review preference, the following always come to you:
 
 - Any decision the operator cannot settle based on the intent.
-- UAT deviations rated Major or Critical, and any other that the operator is unsure about. With no one present, an issue you labelled `autofix` counts as already seen.
+- UAT deviations rated Major or Critical, and any other that the operator is unsure about. With no one present in an unattended session, a deviation found from an issue you labelled `autofix` counts as already seen.
 - Changes to Non-Negotiables — architecture decisions marked as costly to reverse — and security decisions that change cost, the risk you accept, or what the app's end users must do.
 - A phase whose same gate still finds problems after two rounds of fixes.
 - A proposed corrective-only phase, for fixes that have piled up. Maintenance with no one present is the exception: it may add and build a corrective-only phase without asking.
@@ -138,9 +138,9 @@ Every role runs on Opus. The architect, planner, security reviewer, and QA engin
 
 ## Maintenance and autopilot
 
-Two modes move the project forward beyond a single intent:
+Two modes keep the project moving, in a session or on a schedule:
 
-- `maintenance` keeps the codebase healthy. It runs a full architecture review if a phase other than a corrective one has completed since the last one, takes up open issues labelled `autofix`, and builds open carry-forward fixes in a corrective-only phase.
+- `maintenance` keeps the codebase healthy. It runs a full architecture review if a phase other than a corrective one has completed since the last run, or none has run yet, takes up open issues labelled `autofix`, and builds open carry-forward fixes in a corrective-only phase.
 - `autopilot` builds the planned phases in order, under a confirmed intent whose review preference is run through.
 
 ### Running them
@@ -151,8 +151,8 @@ To run one with no one present, create a Claude Code routine on the repo with a 
 
 ### With no one present
 
-- **One branch, one PR.** All work goes on one `claude/phasecraft/{date}` branch, pushed after every step whatever your intent's delivery setting. Its draft PR is marked ready once it passes UAT. Neither mode ever merges.
-- **Your own work.** Attended work stays on its own branches. Unattended work cannot see them: while another unmerged branch has changed the plan or tracker, it reviews and takes up `autofix` issues but builds nothing, and asks you. Merge its PR before building phases yourself.
+- **One branch, one PR.** All work goes on one `claude/phasecraft/{date}` branch, pushed after every step whatever your intent's delivery setting. Its draft PR is marked ready once it passes UAT. While that PR is ready for review, nothing more is added to it. Neither mode ever merges.
+- **Your own work.** Attended work stays on its own branches. Unattended work cannot see them: while another unmerged branch has changed the plan or tracker, it reviews and takes up `autofix` issues but builds nothing, and asks you. Merge the routine's PR before building phases yourself.
 - **Discussion stages** stay with you.
 
 ### When it needs you
@@ -211,7 +211,7 @@ The three main benefits over 0.7:
 2. **Stronger verification.** 2.0 adds a security review gate and a maintainability check in the architecture review. The build gate rests on output the operator re-runs itself — tests, lint, type checks, and a dependency audit — not on test results the developer saved.
 3. **Existing codebases.** Brownfield onboarding derives the missing artifacts from existing code (best-effort basis). 0.7 supported new projects only.
 
-2.0 is also more than 50% smaller than 0.7. Each session loads only the shared rules and its own role file, about 2,000 to 5,000 words.
+2.0 is also more than 50% smaller than 0.7. Each session loads only the shared rules and its own role file, about 2,000 to 5,500 words.
 
 Dropped from 0.7, and what replaced each:
 
