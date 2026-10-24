@@ -22,7 +22,7 @@ PhaseCraft 2.0 is a major rewrite of PhaseCraft 0.7. There is no migration path.
 
 ## Getting started
 
-You need Claude Code, git, and Python 3. Pushing branches or opening PRs needs your code host's CLI, such as Github CLI (`gh`). UAT of a web interface uses Claude’s built-in browser, which is available when you run Claude Code in the Claude desktop app.
+You need Claude Code, git, and Python 3. Pushing branches or opening PRs needs your code host's CLI, such as Github CLI (`gh`). UAT of a web interface uses Claude’s built-in browser, which is available when you run Claude Code in the Claude desktop app. A cloud session, such as a scheduled routine, can use the Playwright MCP server instead (see Maintenance and autopilot).
 
 If your repo has been running another SDLC agentic process, finish or drop its work in flight first. Rename an existing CLAUDE.md or .claude/ folder with a -prior suffix.
 
@@ -61,6 +61,7 @@ specs → UI design → architecture → plan → per phase: build → architect
 - **Findings.** Critical and Major findings are fixed in one batch, then reviewed again. Minor findings never block. A phase whose same gate still finds problems after two fixes comes to you.
 - **Completed phases are frozen.** A defect found later is fixed as forward work in a later phase.
 - **Wider UAT.** A user flow that spans phases is tested end to end once its last phase is complete. A full UAT runs when the intent's work is complete, and before any PR.
+- **Full architecture review.** On request, or in a scheduled maintenance run after new phases have completed, the architect reviews the whole codebase, across phases. It finds the drift, duplication, and eroded design that phase reviews cannot see. Its serious findings become carry-forward fixes.
 
 **Sessions stay short on purpose.** A session's context fills up with discussion and worker handoffs. As it fills, quality drops. When Claude Code compacts it, detail is lost. So each discussion stage gets its own session, and a build session covers at most 2 phases by default. You can change that number in the intent. At a limit, the operator stops at a clean boundary and asks you to start a new session. The tracker and the other files carry everything across, so nothing is lost.
 
@@ -74,15 +75,17 @@ Work runs on a confirmed intent file the operator records under `/intents/record
 - Number of phases per session.
 - Delivery options: commit only, push a branch, or push and open a PR.
 
+You can bring issues from your code host into an intent. The operator records them in the intent file and keeps their status in step with the work. An issue on its own is never a confirmed intent. Bug reports are different: issues labelled `autofix` are checked against the current specs and fixed as forward work. Say "pick up the autofix issues", or let maintenance take them. To use another label, ask the operator to record it in the repo map.
+
 Your answers to the operator's questions are appended to the file. A change of intent replaces it with a new file. The intent file is the contract the operator answers to. It is also how a new session knows what you authorized.
 
 Irrespective of the review preference, the following always come to you:
 
 - Any decision the operator cannot settle based on the intent.
-- UAT deviations rated Major or Critical, and any other that the operator is unsure about.
+- UAT deviations rated Major or Critical, and any other that the operator is unsure about. With no one present, an issue you labelled `autofix` counts as already seen.
 - Changes to Non-Negotiables — architecture decisions marked as costly to reverse — and security decisions that change cost, the risk you accept, or what the app's end users must do.
 - A phase whose same gate still finds problems after two rounds of fixes.
-- A proposed corrective-only phase, for fixes that have piled up.
+- A proposed corrective-only phase, for fixes that have piled up. Maintenance with no one present is the exception: it may add and build a corrective-only phase without asking.
 - Moving a task to a cheaper model.
 
 You can also report problems you find yourself. The operator passes them to a UAT run, which checks them against the specs.
@@ -98,7 +101,7 @@ The operator invokes the required worker role as a sub-agent, for each task need
 | operator | The main session. Intent, briefs, sequencing, tracker, gates, verification runs, spec versions, delivery. Never does role work. |
 | product-manager | Feature specs, test specs, NFRs — and UAT of the running application. Never reads code or architecture. |
 | ui-designer | Personas, UI/UX spec, conversational interface spec, mockups. |
-| architect | The architecture files, including security decisions. Reviews each built phase against them, and for maintainability. |
+| architect | The architecture files, including security decisions. Reviews each built phase against them, and for maintainability. Reviews the whole codebase in a full review. |
 | planner | Divides features into dependency-ordered phases, sized to fit a session. |
 | developer | Implements a phase with tests. The only role that writes to the code root. |
 | security-reviewer | Reviews each security-relevant phase for weaknesses. Fixes nothing. |
@@ -132,6 +135,23 @@ DOMAIN-CONTEXT.md      domain expertise the roles assume
 ## Models and cost
 
 Every role runs on Opus. The architect, planner, security reviewer, and QA engineer run at high effort, set in their role files. The others use the session default. Effort cannot be changed per task. With your confirmation, the operator may move a single mechanical, fully specified task to Sonnet. It never does this for architecture, reviews, or UAT, and it records any such move in the tracker. Expect Opus-level token use. Phase sizing keeps each worker well inside one session.
+
+## Maintenance and autopilot
+
+Maintenance and autopilot move the project forward beyond a single intent. Run either one in a session, or schedule it as a Claude Code routine that runs with no one present.
+
+- `maintenance` keeps the codebase healthy. It runs a full architecture review if a phase other than a corrective one has completed since the last one, takes up open issues labelled `autofix` on your code host, and builds the open carry-forward fixes in a corrective-only phase.
+- `autopilot` builds the planned phases, in order, under a confirmed intent whose review preference is run through.
+
+In a session, say "run maintenance" or "run autopilot". To schedule one, create a Claude Code routine on the repo with a schedule trigger, Opus as its model, and the prompt `No user is present. Run maintenance.` (or `Run autopilot.`). Schedule the two so they never overlap. A routine runs without asking for approval. What it can reach is set by the repo, the environment's network access, and the connectors you include, so remove connectors it does not need.
+
+With no one present, all work goes on one `claude/phasecraft/{date}` branch, pushed after every step whatever your intent's delivery setting, with a draft PR that is marked ready once it passes UAT. Neither ever merges. Attended work stays on its own branches. Anything that needs you gets the `needs-human` label, on the issue or PR it concerns, or on a new issue; answer there, and the next run picks it up. A routine acts through the GitHub account of whoever set it up and GitHub does not notify anyone of comments made through their own account, so copy `claude/templates/needs-human-notify.yml` into `.github/workflows/`: whenever the label is added, it mentions the repo owner; to mention someone else, add a repository variable `PHASECRAFT_NOTIFY` with their GitHub handle, under Settings → Secrets and variables → Actions → Variables. Each attended session also lists what is waiting. Discussion stages stay with you. Unattended work cannot see unmerged work on other branches. While another unmerged branch has changed the plan or tracker, it reviews and takes up `autofix` issues but builds nothing, and asks you. Merge its PR before building phases yourself.
+
+For UAT with no one present, the cloud session needs a browser, and your application must start there from the repo, with any secrets as environment variables. Otherwise UAT waits for an attended session. For the browser:
+
+- Copy `claude/templates/mcp.json` to `.mcp.json` at the repo root, and replace `{version}` with a pinned Playwright MCP version. Add `"enabledMcpjsonServers": ["playwright"]` to `.claude/settings.json`, so a session with no one present does not wait for approval.
+- In the cloud environment's setup script, install the Chromium build that version expects. If the download is blocked, add its hosts to the environment's network allowlist.
+- Check the first run's transcript. A green run status does not mean UAT ran.
 
 ## Optional Configuration (use with caution)
 
@@ -167,7 +187,7 @@ PhaseCraft 0.x told models how to work: step lists, entry banners, orchestration
 
 - Outcomes are stated. The steps are the model's.
 - Formats are fixed only where two sessions must interoperate. For instance: the tracker, reports, the plan, and the runtime handle.
-- Firm rules remain only where models tend to cut corners: weakening tests to pass, quiet scope changes, and touching live cloud resources.
+- Firm rules remain only where models tend to cut corners or where a mistake is costly to undo. Examples: weakening tests to pass, quiet scope changes, and touching live cloud resources.
 
 The three main benefits over 0.7:
 

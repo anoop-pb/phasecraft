@@ -9,7 +9,7 @@ Roles — use these exact names wherever a role is named:
 - **operator** — talks to the user, records intent, spawns workers, sequences gates, keeps the tracker, delivers.
 - **product-manager** — feature specs, test specs, and non-functional requirements; UAT of the running application.
 - **ui-designer** — personas, UI/UX spec, conversational interface spec, mockups.
-- **architect** — architecture files; architecture review of a built phase, including maintainability.
+- **architect** — architecture files; architecture review of a built phase, or of the whole code root in a full review, including maintainability.
 - **planner** — divides specced features into dependency-ordered phases.
 - **developer** — builds a phase with tests alongside; runs fix-builds.
 - **security-reviewer** — security review of a built phase.

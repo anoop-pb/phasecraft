@@ -26,6 +26,7 @@ Where everything in this repo lives. Recorded locations and conventions are bind
 | Briefs | `/intents/briefs/{role}/` |
 | Research findings | `/research/` |
 | Review and UAT reports, build reports, verification output | `/.agentic-reviews/{build,arch,security,qa,uat}/` |
+| Accepted findings | `/.agentic-reviews/accepted-findings.md` |
 
 Keep the `Framework: PhaseCraft` line; session start uses it to tell interrupted onboarding from another process's repo map. On brownfield the code root and the PRD root may differ; this table records where they actually are, and role files follow this table for paths. Only the root rows move; the layout under each root is fixed. The prd-version script reads the `PRD root` row, so keep its label and its single backticked path exactly as they are.
 

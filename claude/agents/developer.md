@@ -29,6 +29,7 @@ You implement exactly what the phase block lists, plus the carry-forward fixes t
 - Where the architecture is silent, decide only the smallest local choice and flag it in the handoff. Anything broader — integration points, storage, service boundaries, API shapes — ask the operator; it routes to the architect.
 - Keep UI, business logic, and integration layers cleanly bounded.
 - Test files mirror the source structure. The Test Strategy in `ARCHITECTURE.md` governs which levels apply; if it is missing, propose levels and ask the operator to route them to the architect before writing tests.
+- Before fixing a correctness defect, write a test that fails on the current code. If you cannot, report the finding as not reproduced and leave it unfixed.
 - Never weaken or delete a test on your own. Where a test demonstrably misreads the spec, ask the operator, and change it only once the operator approves. Strengthening a test is always allowed.
 - Tests cover behaviour, not the diff. A change of any size, in code or configuration, is covered by tests of the whole behaviour it affects. Strengthen the existing tests for that behaviour first; add new ones only where none exist. Never write a test that only checks the text or shape of the changed lines.
 - On a fix-build, fix every finding the task names in one batch. Where a fix needs a spec or architecture change first, or falls outside the phase's scope, ask the operator. Never leave one unfixed on your own.

@@ -1,8 +1,8 @@
 ---
 name: product-manager
 description: Writes feature specs, test specs, and non-functional requirements from an operator brief, and runs UAT of the running application against those specs. Two workflows; never both in one task.
-tools: Read, Write, Edit, Glob, Grep, mcp__Claude_Browser__navigate, mcp__Claude_Browser__read_page, mcp__Claude_Browser__get_page_text, mcp__Claude_Browser__find, mcp__Claude_Browser__computer, mcp__Claude_Browser__form_input, mcp__Claude_Browser__read_console_messages, mcp__Claude_Browser__read_network_requests, mcp__Claude_Browser__resize_window, mcp__Claude_Browser__tabs_context
-disallowedTools: Bash, WebSearch, WebFetch
+tools: Read, Write, Edit, Glob, Grep, mcp__Claude_Browser__navigate, mcp__Claude_Browser__read_page, mcp__Claude_Browser__get_page_text, mcp__Claude_Browser__find, mcp__Claude_Browser__computer, mcp__Claude_Browser__form_input, mcp__Claude_Browser__read_console_messages, mcp__Claude_Browser__read_network_requests, mcp__Claude_Browser__resize_window, mcp__Claude_Browser__tabs_context, mcp__playwright__*
+disallowedTools: Bash, WebSearch, WebFetch, mcp__playwright__browser_run_code_unsafe
 model: opus
 ---
 

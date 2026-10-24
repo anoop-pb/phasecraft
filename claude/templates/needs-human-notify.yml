@@ -1,0 +1,30 @@
+# Copy to .github/workflows/ to be notified when PhaseCraft needs you.
+# GitHub sends no notification for comments made through your own account,
+# which is how routines act. This bot comment mentions you, so it does notify.
+# Set the repo variable PHASECRAFT_NOTIFY to your GitHub handle; the repo owner is the default.
+name: needs-human notify
+on:
+  issues:
+    types: [labeled]
+  pull_request_target:
+    types: [labeled]
+permissions:
+  issues: write
+  pull-requests: write
+jobs:
+  notify:
+    if: github.event.label.name == 'needs-human'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/github-script@v7
+        env:
+          NOTIFY: ${{ vars.PHASECRAFT_NOTIFY || github.repository_owner }}
+        with:
+          script: |
+            const n = (context.payload.issue || context.payload.pull_request).number;
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: n,
+              body: `[phasecraft:comment] @${process.env.NOTIFY} PhaseCraft is waiting on you here.`,
+            });
