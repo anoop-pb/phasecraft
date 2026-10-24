@@ -75,7 +75,7 @@ Work runs on a confirmed intent file the operator records under `/intents/record
 - Number of phases per session.
 - Delivery options: commit only, push a branch, or push and open a PR.
 
-You can bring issues from your code host into an intent. The operator records them in the intent file and keeps their status in step with the work. An issue on its own is never a confirmed intent. Bug reports are different: issues labelled `autofix` are checked against the current specs and fixed as forward work. Say "pick up the autofix issues", or let maintenance take them. To use another label, ask the operator to record it in the repo map.
+You can bring issues from your code host into an intent. The operator records them in the intent file and keeps their status in step with the work. An issue on its own is never a confirmed intent. Bug reports are different: issues labelled `autofix` are checked against the current specs and fixed as forward work. Say "pick up the autofix issues", or let maintenance take them.
 
 Your answers to the operator's questions are appended to the file. A change of intent replaces it with a new file. The intent file is the contract the operator answers to. It is also how a new session knows what you authorized.
 
@@ -138,19 +138,35 @@ Every role runs on Opus. The architect, planner, security reviewer, and QA engin
 
 ## Maintenance and autopilot
 
-Maintenance and autopilot move the project forward beyond a single intent. Run either one in a session, or schedule it as a Claude Code routine that runs with no one present.
+Two modes move the project forward beyond a single intent:
 
-- `maintenance` keeps the codebase healthy. It runs a full architecture review if a phase other than a corrective one has completed since the last one, takes up open issues labelled `autofix` on your code host, and builds the open carry-forward fixes in a corrective-only phase.
-- `autopilot` builds the planned phases, in order, under a confirmed intent whose review preference is run through.
+- `maintenance` keeps the codebase healthy. It runs a full architecture review if a phase other than a corrective one has completed since the last one, takes up open issues labelled `autofix`, and builds open carry-forward fixes in a corrective-only phase.
+- `autopilot` builds the planned phases in order, under a confirmed intent whose review preference is run through.
 
-In a session, say "run maintenance" or "run autopilot". To schedule one, create a Claude Code routine on the repo with a schedule trigger, Opus as its model, and the prompt `No user is present. Run maintenance.` (or `Run autopilot.`). Schedule the two so they never overlap. A routine runs without asking for approval. What it can reach is set by the repo, the environment's network access, and the connectors you include, so remove connectors it does not need.
+### Running them
 
-With no one present, all work goes on one `claude/phasecraft/{date}` branch, pushed after every step whatever your intent's delivery setting, with a draft PR that is marked ready once it passes UAT. Neither ever merges. Attended work stays on its own branches. Anything that needs you gets the `needs-human` label, on the issue or PR it concerns, or on a new issue; answer there, and the next run picks it up. A routine acts through the GitHub account of whoever set it up and GitHub does not notify anyone of comments made through their own account, so copy `claude/templates/needs-human-notify.yml` into `.github/workflows/`: whenever the label is added, it mentions the repo owner; to mention someone else, add a repository variable `PHASECRAFT_NOTIFY` with their GitHub handle, under Settings → Secrets and variables → Actions → Variables. Each attended session also lists what is waiting. Discussion stages stay with you. Unattended work cannot see unmerged work on other branches. While another unmerged branch has changed the plan or tracker, it reviews and takes up `autofix` issues but builds nothing, and asks you. Merge its PR before building phases yourself.
+In a session, say "run maintenance" or "run autopilot".
 
-For UAT with no one present, the cloud session needs a browser, and your application must start there from the repo, with any secrets as environment variables. Otherwise UAT waits for an attended session. For the browser:
+To run one with no one present, create a Claude Code routine on the repo with a schedule trigger, Opus as its model, and the prompt `No user is present. Run maintenance.` (or `Run autopilot.`). Schedule the two so they never overlap. A routine runs without asking for approval. What it can reach is set by the repo, its cloud environment, and the connectors you include, so remove connectors it does not need.
 
-- Copy `claude/templates/mcp.json` to `.mcp.json` at the repo root, and replace `{version}` with a pinned Playwright MCP version. Add `"enabledMcpjsonServers": ["playwright"]` to `.claude/settings.json`, so a session with no one present does not wait for approval.
-- In the cloud environment's setup script, install the Chromium build that version expects. If the download is blocked, add its hosts to the environment's network allowlist.
+### With no one present
+
+- **One branch, one PR.** All work goes on one `claude/phasecraft/{date}` branch, pushed after every step whatever your intent's delivery setting. Its draft PR is marked ready once it passes UAT. Neither mode ever merges.
+- **Your own work.** Attended work stays on its own branches. Unattended work cannot see them: while another unmerged branch has changed the plan or tracker, it reviews and takes up `autofix` issues but builds nothing, and asks you. Merge its PR before building phases yourself.
+- **Discussion stages** stay with you.
+
+### When it needs you
+
+Anything that needs you gets the `needs-human` label, on the issue or PR it concerns, or on a new issue. Answer there; the next run picks it up. Each attended session also lists what is waiting.
+
+A routine acts through the GitHub account of whoever set it up, and GitHub does not notify anyone of comments made through their own account. To be notified, copy `.claude/templates/needs-human-notify.yml` into `.github/workflows/`. Whenever the label is added, it mentions the repo owner. To mention someone else, add a repository variable `PHASECRAFT_NOTIFY` with their GitHub handle, under Settings → Secrets and variables → Actions → Variables.
+
+### UAT with no one present
+
+The cloud session needs a browser, and your application must start there from the repo. Otherwise UAT waits for an attended session.
+
+- Copy `.claude/templates/mcp.json` to `.mcp.json` at the repo root, and replace `{version}` with a pinned Playwright MCP version. Add `"enabledMcpjsonServers": ["playwright"]` to `.claude/settings.json`, so the session does not wait for approval.
+- The routine's cloud environment, edited from its settings on claude.ai, needs three things: a setup script that installs the Chromium build that version expects; your app's secrets as environment variables; and, if a download is blocked, its hosts added to the network allowlist.
 - Check the first run's transcript. A green run status does not mean UAT ran.
 
 ## Optional Configuration (use with caution)
