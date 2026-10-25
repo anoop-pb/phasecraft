@@ -27,10 +27,11 @@ At the start, read every issue and PR the tracker names for an open decision. Th
 - If the application cannot start because the session lacks something it needs, such as a service or a secret, that is not a defect: ask.
 - A failure no role can fix within its boundaries, such as an action the environment refuses: do not look for a way around it; ask.
 
-Where an active intent exists, its boundaries and settings hold. Two exceptions to the decisions that always go to the user:
+Where an active intent exists, its boundaries and settings hold. Three exceptions to the decisions that always go to the user:
 
 - In maintenance, you may insert a corrective-only phase without asking. Move no `low` Minor findings into it; that still needs the user.
 - A deviation from a `manual` UAT of an `autofix` issue counts as seen by the user, who reported it by labelling it.
+- A Major UAT deviation routed to the developer, where the spec is clear, may go to a fix-build without the user seeing it first; list it in the PR. Critical deviations, and any you are in doubt about, still wait on the user.
 
 ## Delivery
 

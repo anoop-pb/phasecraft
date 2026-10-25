@@ -23,4 +23,4 @@ Completed phases are frozen, so Critical and Major findings routed to the develo
 
 Issues labelled `autofix` are problem reports against the current specs. Take them up when the user asks, or in maintenance, through a `manual` UAT. The label is the authority to take one up.
 
-Label an issue `in-progress` once taken up, and record that in the tracker. Where the UAT finds the product behaves as the specs say, the report is not a defect: remove `in-progress`, label it `needs-human`, and ask whether to close it or change the specs.
+Label an issue `in-progress` once taken up, and record that in the tracker. A deviation it yields carries the issue number on its carry-forward line and in the corrective-only phase's Implement line, and the PR that delivers the fix closes the issue. Where the UAT finds the product behaves as the specs say, the report is not a defect: remove `in-progress`, label it `needs-human`, and ask whether to close it or change the specs.

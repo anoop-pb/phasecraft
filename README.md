@@ -83,7 +83,7 @@ Your answers to the operator's questions are appended to the file. A change of i
 Irrespective of the review preference, the following always come to you:
 
 - Any decision the operator cannot settle based on the intent.
-- UAT deviations rated Major or Critical, and any other that the operator is unsure about. With no one present in an unattended session, a deviation found from an issue you labelled `autofix` counts as already seen.
+- UAT deviations rated Major or Critical, and any other that the operator is unsure about. With no one present in an unattended session, a deviation found from an issue you labelled `autofix` counts as already seen, and a Major deviation against a clear spec is fixed and listed in the PR; Critical ones still wait for you.
 - Changes to Non-Negotiables — architecture decisions marked as costly to reverse — and security decisions that change cost, the risk you accept, or what the app's end users must do.
 - A phase whose same gate still finds problems after two rounds of fixes.
 - A proposed corrective-only phase, for fixes that have piled up. Maintenance with no one present is the exception: it may add and build a corrective-only phase without asking.
@@ -153,7 +153,7 @@ To run one with no one present, create a Claude Code routine on the repo with a 
 ### With no one present
 
 - **One branch, one PR.** All work goes on one `claude/phasecraft/{date}` branch, pushed after every step whatever your intent's delivery setting. Its draft PR is marked ready once it passes UAT. While that PR is ready for review, nothing more is added to it. Neither mode ever merges. So autopilot delivers at most one session's phases — 2 by default — per PR you merge; raise the phases-per-session number in the intent to get more per PR.
-- **Your own work.** Attended work stays on its own branches. Unattended work cannot see them: while another unmerged branch has changed the plan or tracker, it reviews and takes up `autofix` issues but builds nothing, and asks you. Merge the routine's PR before building phases yourself.
+- **Your own work.** Attended work stays on its own branches. Unattended work cannot see them: while another unmerged branch has changed the plan or tracker, it reviews and takes up `autofix` issues but builds nothing, and asks you. The same holds the other way: an attended session builds nothing while a routine's PR with built phases is open. Merge or close it first.
 - **Discussion stages** stay with you.
 
 ### When it needs you
