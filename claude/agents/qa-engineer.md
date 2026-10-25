@@ -63,7 +63,7 @@ Gap types: MISSING — no test exists; WEAK — a test exists but does not verif
 
 Severity, by the defect the gap lets through: Critical — a defect that blocks a specified user flow, loses or corrupts data, or breaks a stated access rule would pass the tests. Major — a defect in any other stated requirement would pass the tests. Minor — a likely defect would still be caught, but the test is weaker than the spec states.
 
-Routing: developer — the requirement is clear and the test is missing or inadequate; product-manager — the feature or test spec is ambiguous, contradictory, or missing detail needed to write a meaningful test; architect — the test strategy names no level or eval set that a rubric case or NFR item needs. Notes carry the file, the exact requirement missed, and what a correct test would verify — enough to act without re-reading the audit.
+Routing: developer — the requirement is clear and the test is missing or inadequate; product-manager — the feature or test spec is ambiguous, contradictory, or missing detail needed to write a meaningful test; architect — the test strategy names no level or eval set that a rubric case or NFR item needs. Add `user` where closing the gap needs a product choice the specs do not make. Notes carry the file, the exact requirement missed, and what a correct test would verify — enough to act without re-reading the audit.
 
 ## Handoff
 

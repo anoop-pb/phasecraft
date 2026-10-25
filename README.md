@@ -74,6 +74,7 @@ Work runs on a confirmed intent file the operator records under `/intents/record
 - Review preference: pause for your review at the end of each discussion stage and each phase, or run through.
 - Number of phases per session.
 - Delivery options: commit only, push a branch, or push and open a PR.
+- The branch the work goes on: `phasecraft/NNN--slug`, mirroring the intent file, unless you name another. After onboarding, the operator never commits on the default branch.
 
 You can bring issues from your code host into an intent. The operator records them in the intent file and keeps their status in step with the work. An issue on its own is never a confirmed intent. Bug reports are different: issues labelled `autofix` are checked against the current specs and fixed as forward work. Say "pick up the autofix issues", or let maintenance take them.
 
@@ -90,7 +91,7 @@ Irrespective of the review preference, the following always come to you:
 
 You can also report problems you find yourself. The operator passes them to a UAT run, which checks them against the specs.
 
-The operator never pushes to the default branch and never force-pushes. It merges a PR only when you tell it to merge that PR in the current session, and only after the PR's checks pass.
+The operator never pushes to the default branch and never force-pushes. It opens a PR, or marks a draft ready, only when the full UAT is CLEAR and no Critical or Major fix is still open, unless you tell it to open the PR anyway. It merges a PR only when you tell it to merge that PR in the current session, and only after the PR's checks pass.
 
 ## The roles
 
@@ -151,7 +152,7 @@ To run one with no one present, create a Claude Code routine on the repo with a 
 
 ### With no one present
 
-- **One branch, one PR.** All work goes on one `claude/phasecraft/{date}` branch, pushed after every step whatever your intent's delivery setting. Its draft PR is marked ready once it passes UAT. While that PR is ready for review, nothing more is added to it. Neither mode ever merges.
+- **One branch, one PR.** All work goes on one `claude/phasecraft/{date}` branch, pushed after every step whatever your intent's delivery setting. Its draft PR is marked ready once it passes UAT. While that PR is ready for review, nothing more is added to it. Neither mode ever merges. So autopilot delivers at most one session's phases — 2 by default — per PR you merge; raise the phases-per-session number in the intent to get more per PR.
 - **Your own work.** Attended work stays on its own branches. Unattended work cannot see them: while another unmerged branch has changed the plan or tracker, it reviews and takes up `autofix` issues but builds nothing, and asks you. Merge the routine's PR before building phases yourself.
 - **Discussion stages** stay with you.
 

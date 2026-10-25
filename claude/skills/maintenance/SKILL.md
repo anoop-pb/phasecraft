@@ -9,7 +9,7 @@ description: The operator's rules for maintenance runs, full architecture review
 
 When the user or a schedule asks for maintenance, keep the codebase healthy without new scope. Work down this list:
 
-1. A phase other than a corrective-only one has completed since the latest full architecture review, or none has run yet: run one.
+1. A phase other than a corrective-only one has completed since the latest full architecture review, or none has run yet and at least one phase is complete: run one.
 2. Open `autofix` issues not yet in progress: take them up.
 3. Carry-forward fixes are open and need no decision: insert one corrective-only phase for them and build it.
 

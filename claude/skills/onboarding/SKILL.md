@@ -19,7 +19,7 @@ No application code exists. Onboarding is done when these exist, each approved b
 - `DOMAIN-CONTEXT.md` from the template, framed as "Assume expertise in …", never "You are …".
 - `REPO-MAP.md` from the template, with the folders it names created and its scratch folder added to `.gitignore`.
 - `CODING-STANDARDS.md` from the template, reviewed, edited, or replaced by the user.
-- `TRACKER.md` in the format in the operator role file, with the Interface line set.
+- `TRACKER.md` in the format in the operator role file, with the Interface line set. `user interface` means a browser or conversational surface a person uses; a CLI, API, or library alone is `headless`.
 
 Propose the overview and the repo map before writing them.
 

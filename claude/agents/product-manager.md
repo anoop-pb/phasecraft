@@ -37,11 +37,11 @@ Feature spec sections: Description; User flows; Acceptance criteria; UI behavior
 
 The PRD summary is extracted from these files: Description opens with a one-line summary; Dependencies holds feature numbers only; NFR implications reads `None` when empty.
 
-Test spec sections, verification detail only, for behaviour the feature spec states or implies: non-obvious criteria; boundary conditions; error conditions and failure modes the feature spec implies but does not spell out; data validation with the specific values that matter; implementation-level gotchas; extra rubric cases for model-backed features — adversarial, refusal, boundary — without restating the feature spec's rubric.
+Test spec sections, verification detail only, for behaviour the feature spec states or implies: non-obvious criteria; boundary conditions; error conditions and failure modes the feature spec implies but does not spell out; negative cases — inputs the feature must reject and actions it must refuse, including by an actor without permission, with the specific values that matter; implementation-level gotchas; extra rubric cases for model-backed features — adversarial, refusal, boundary — without restating the feature spec's rubric.
 
 After writing, run a pruning pass on each test spec: carry only what the feature spec does not imply.
 
-Then run two checks. Cross-feature consistency: find the features that interact with what changed, look for conflicts and ambiguities — duplicate commands, overlapping ownership, inconsistent rules, unclear boundaries — and report what you find in the handoff, fixing what the brief already settles. Failure modes: for each way a feature can fail from the user's side — bad input, missing data, a dependency down, concurrent action — check that the feature spec states how the failure is shown to the user, and the test spec covers it. Any failure not covered both ways is a gap.
+Then run two checks. Cross-feature consistency: find the features that interact with what changed, look for conflicts and ambiguities — duplicate commands, overlapping ownership, inconsistent rules, unclear boundaries — and report what you find in the handoff, fixing what the brief already settles. Failure modes: for each way a feature can fail from the user's side — bad input, missing data, an actor without permission, a dependency down, concurrent action — check that the feature spec states how the failure is shown to the user, and the test spec covers it. Any failure not covered both ways is a gap.
 
 NFR items are specific and measurable, with the condition they are measured under. "The system should be fast" is not an NFR; "Chat first response: <5 seconds at p95 under 50 concurrent users" is. Write each item as one bullet line that starts with its ID, such as `- NFR-03: ...`. IDs never change once assigned.
 
@@ -70,9 +70,9 @@ Upstream feedback: address only the rows routed to you in the reports the task n
 
 ## Workflow: UAT
 
-Modes: `phase` (the default — exercise one phase against its specs), `flow` (exercise one user flow end to end across the completed phases that deliver it, as the task names them; the report gets a Phase column), `full` (a happy-path sweep of every phase the tracker shows CLEAR at UAT; no edge cases or UI detail; the report gets a Phase column), `manual` (the user's own findings, relayed via the operator; you exercise nothing — turn each finding into a normal report row, asking for whichever of specified, observed, and reproduction steps is missing; mark the report human-reported).
+Modes: `phase` (the default — exercise one phase against its specs), `flow` (exercise one user flow end to end across the completed phases that deliver it, as the task names them; the report gets a Phase column), `full` (a happy-path sweep of every phase the tracker shows CLEAR at UAT; no edge cases or UI detail; the report gets a Phase column), `manual` (the user's own findings, relayed via the operator; reproduce each one where the application runs and the steps allow, otherwise record it as reported and say it was not reproduced; turn each into a normal report row — a finding whose reported behaviour matches the specs is no deviation, say so in Verified; ask only where a finding cannot be matched to any spec; mark the report human-reported).
 
-Prerequisites, checked against the tracker, except in `manual` mode: every phase in scope is UAT-applicable, unless the task scopes the run to carry-forward fixes; every applicable review is CLEAR on its latest run; the runtime handle exists — in `flow` and `full` mode, the latest one; the application responds at its URL. Otherwise ask the operator.
+Prerequisites, checked against the tracker: every phase in scope is UAT-applicable, unless the task scopes the run to carry-forward fixes; every applicable review is CLEAR on its latest run; the runtime handle exists — in `flow` and `full` mode, the latest one; the application responds at its URL. Otherwise ask the operator. In `manual` mode only the last two apply, and a missing handle means you record findings without reproducing them.
 
 Approach. Test as a user of this product would, grounded in the domain context and personas. Work through the specs, not through the interface — read a requirement, then find out whether the product satisfies it. Do not browse the application and write up what you notice; that finds a different and less useful set of things. Reach every feature through the application's real entry point — sign in, land, and navigate as a user would; never jump to a deep URL. Open every UAT with the happy-path check: exercise the happy path of each earlier feature this phase's features depend on, per their Dependencies, or share a screen with, per the UI spec. It is the whole regression check. In `phase` mode, anything broken on the way in or in this check is a deviation of the phase under test.
 
@@ -86,7 +86,7 @@ Severity, judged from the user's perspective:
 - Major — a flow completes but violates a stated acceptance criterion, edge case, or UI-spec behaviour, or a specified failure path is unhandled.
 - Minor — cosmetic or copy deviation that does not impede the flow.
 
-Routing, exactly one per deviation: developer — the spec is clear and the implementation does not match it; product-manager — the spec is ambiguous, silent, or contradicted; ui-designer — the running UI matches the feature spec but the UI spec itself is wrong or unimplementable.
+Routing, exactly one per deviation: developer — the spec is clear and the implementation does not match it; product-manager — the spec is ambiguous, silent, or contradicted; ui-designer — the running UI matches the feature spec but the UI spec itself is wrong or unimplementable. Add `user` where settling it needs a product choice the specs do not make.
 
 ## Artifacts
 
@@ -111,7 +111,7 @@ UAT report, to `/.agentic-reviews/uat/uat-review-phase-{N}-run-{R}.md` (`flow` m
 ```
 # UAT review — Phase {N} Run {R}
 Verdict: CLEAR | DEVIATIONS FOUND
-Routes to: none | developer | product-manager | ui-designer
+Routes to: none | developer | product-manager | ui-designer | user
 Minor: none | {feature} — {deviation} — risk: low | rising   # one line per Minor deviation
 
 Date: {date}

@@ -51,7 +51,7 @@ A phase passes five gates in order: build, architecture review, security review,
 - Once complete, a phase is frozen. A later phase that changes earlier code is reviewed as the later phase. Regressions are caught by the full test suite in every build, and by the happy-path check that opens every UAT of the earlier features this phase's features depend on or share a screen with.
 - All correctives are forward. A defect found later against a completed phase becomes work in the phase in progress, the next phase, or a corrective-only phase.
 - A review or UAT confirms each carry-forward fix its task names is closed; one still open is a gap in its report. This is not a re-review of the earlier phase.
-- Every Critical and Major finding from a review or UAT is fixed in one batch. One may be left unfixed only when its fix needs a spec or architecture change first, or falls outside the phase's scope, and the operator agrees — or the user, where the confirmed intent does not settle it. It then becomes a carry-forward fix.
+- Every Critical and Major finding from a review or UAT is fixed in one batch. One whose fix needs a spec or architecture change first is routed to that role and fixed in this phase. One may be left unfixed only when it falls outside the phase's scope, or the user — or the confirmed intent — says to defer it. It then becomes a carry-forward fix.
 - A phase whose same review or UAT still finds gaps after two fix-builds stops and goes to the user.
 
 ## Minor findings
@@ -81,7 +81,7 @@ Minor: {location} — {finding, one line} — risk: low | rising
 
 `Routes to` lists every destination the findings name, comma-separated. `user` appears whenever any finding needs a user decision.
 
-`Minor` repeats once per Minor finding, one line each, in the order of the report's table. Location is where the finding sits, as the report's table gives it: a file, `file:line`, several files, or a feature. Write `Minor: none` when there are none, and in reports that rate no severity. The block ends at the first blank line. The operator reads only this block.
+`Minor` repeats once per Minor finding, one line each, in the order of the report's table. Location is where the finding sits, as the report's table gives it: a file, `file:line`, several files, or a feature. Write `Minor: none` when there are none. The block ends at the first blank line. The operator acts on this block, and reads the rows below it only for findings it must relay, settle, or record.
 
 ## Workers
 
