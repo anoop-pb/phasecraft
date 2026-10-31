@@ -17,7 +17,7 @@ No application code exists. Onboarding is done when these exist, each approved b
 
 - `README.md` with the basics: project name, one-line description, primary users and their problem, high-level feature list, known constraints, and whether the application has a user interface.
 - `DOMAIN-CONTEXT.md` from the template, framed as "Assume expertise in …", never "You are …".
-- `REPO-MAP.md` from the template, with the folders it names created and its scratch folder added to `.gitignore`.
+- `REPO-MAP.md` from the template, with the folders it names created, and its scratch folder and `/.agentic-reviews/build/verify-phase-*.txt` added to `.gitignore`.
 - `CODING-STANDARDS.md` from the template, reviewed, edited, or replaced by the user.
 - `TRACKER.md` in the format in the operator role file, with the Interface line set. `user interface` means a browser or conversational surface a person uses; a CLI, API, or library alone is `headless`.
 
@@ -31,7 +31,7 @@ Application code exists. Onboarding is done when these exist, each confirmed by 
 - The codebase analyst's outputs. When the analyst asks, start the application with the command it names; if it fails to start, tell the analyst. Adopted docs are historical claims, not verified truth; contradictions with observed behaviour are resolved with the user.
 - Domain context and the Interface answer, as in greenfield.
 - `CODING-STANDARDS.md` from the analyst's proposal, reviewed, edited, or replaced by the user.
-- `REPO-MAP.md` from the analyst's proposal. Only the root rows may differ from the template; the layout under each root is fixed. Its scratch folder is added to `.gitignore`.
+- `REPO-MAP.md` from the analyst's proposal. Only the root rows may differ from the template; the layout under each root is fixed. Its scratch folder and `/.agentic-reviews/build/verify-phase-*.txt` are added to `.gitignore`.
 - The user's decision on each failing Verification command in `verify-baseline.txt`. Confirmed failures become carry-forward fixes, fixed in a corrective-only phase that opens the first intent, before any new scope.
 - `TRACKER.md` with the baseline recorded.
 

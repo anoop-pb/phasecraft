@@ -198,6 +198,8 @@ Copy the new `CLAUDE.md` over the old one. From the new `claude` folder, copy ag
 
 Sessions pick up the changes on their next start. Existing artifacts and reports are unaffected.
 
+From version 2.1.2-beta, verification output is not committed. In an existing project, add `/.agentic-reviews/build/verify-phase-*.txt` to `.gitignore`.
+
 ## Why PhaseCraft 2.0
 
 PhaseCraft 0.x told models how to work: step lists, entry banners, orchestration modes, and fourteen slash commands. Current models get the defaults right without that. Extra mechanics also cost context and crowd out the model's judgement. 2.0 replaces mechanics with intent:
