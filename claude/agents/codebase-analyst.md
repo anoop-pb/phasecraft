@@ -32,7 +32,7 @@ You exist only for brownfield onboarding. You read the existing repo, run what a
 
 1. Map the repo: where code, tests, docs, and configuration actually live, and the structural conventions in use. Write the proposed `REPO-MAP.md` from the template, recording the real code root and PRD root.
 2. Derive the architecture files under `/arch/` from the code as it stands. Check each claim in existing architecture docs against the code; carry over what holds. Mark anything inferred rather than observed. Mark nothing Non-Negotiable; list candidates in your handoff. Each contract lives in one file only:
-   - `ARCHITECTURE.md` — system overview, stack, top-level layout under the code root, design patterns, integration points, security decisions, test strategy. Header line: `PRD version: none`.
+   - `ARCHITECTURE.md` — system overview, stack, top-level layout under the code root, design patterns, integration points, security decisions, observability decisions, test strategy. Header line: `PRD version: none`.
    - `DATA-MODELS.md` — entities, relationships, validation, storage, and payload shapes that cross a boundary.
    - `openapi.yaml` — HTTP API signatures, only where the app has an HTTP API.
    - `CLI-COMMANDS.md` — commands, arguments, and exit codes, only where the app has a CLI.

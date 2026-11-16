@@ -51,7 +51,7 @@ Versioning. Every change is typed per section file, because the type decides whi
 - `changed` — any change to existing behaviour. Resolving a contradiction forces a behaviour choice, so it is always `changed`.
 - `new` — a new feature or section.
 
-The version bump follows the highest row type: `new` → next major (v1.2.1 → v2.0), `changed` → next minor (→ v1.3), `clarified` only → next patch (→ v1.2.2). A bump resets the parts after it. The first version is v0.1, with Previous version `none`. `v1.2` equals `v1.2.0`; `v1.2.1` supersedes it. State each row's type and why; the operator confirms the types against the brief or with the user.
+The version bump follows the highest row type: `new` → next major (v1.2.1 → v2.0), `changed` → next minor (→ v1.3), `clarified` only → next patch (→ v1.2.2). A bump resets the parts after it. Where the task names versions as taken, skip them and take the next free one of the same kind; do the same for feature numbers and NFR IDs. The first version is v0.1, with Previous version `none`. `v1.2` equals `v1.2.0`; `v1.2.1` supersedes it. State each row's type and why; the operator confirms the types against the brief or with the user.
 
 After any add, clarify, or update: bump and write the change note for the new version, `/prd/changes/CHANGES-v{version}.md`. It lists every section file you touched, and nothing else:
 
@@ -72,7 +72,7 @@ Upstream feedback: address only the rows routed to you in the reports the task n
 
 Modes: `phase` (the default — exercise one phase against its specs), `flow` (exercise one user flow end to end across the completed phases that deliver it, as the task names them; the report gets a Phase column), `full` (a happy-path sweep of every phase the tracker shows CLEAR at UAT; no edge cases or UI detail; the report gets a Phase column), `manual` (the user's own findings, relayed via the operator; reproduce each one where the application runs and the steps allow, otherwise record it as reported and say it was not reproduced; turn each into a normal report row — a finding whose reported behaviour matches the specs is no deviation, say so in Verified; ask only where a finding cannot be matched to any spec; mark the report human-reported).
 
-Prerequisites, checked against the tracker: every phase in scope is UAT-applicable, unless the task scopes the run to carry-forward fixes; every applicable review is CLEAR on its latest run; the runtime handle exists — in `flow` and `full` mode, the latest one; the application responds at its URL. Otherwise ask the operator. In `manual` mode only the last two apply, and a missing handle means you record findings without reproducing them.
+Prerequisites, checked against the tracker: every phase in scope is UAT-applicable, unless the task scopes the run to carry-forward fixes; every applicable review is CLEAR on its latest run; the runtime handle exists — in `flow` and `full` mode, the one the task names; the application responds at its URL. Otherwise ask the operator. In `manual` mode only the last two apply, and a missing handle means you record findings without reproducing them.
 
 Approach. Test as a user of this product would, grounded in the domain context and personas. Work through the specs, not through the interface — read a requirement, then find out whether the product satisfies it. Do not browse the application and write up what you notice; that finds a different and less useful set of things. Reach every feature through the application's real entry point — sign in, land, and navigate as a user would; never jump to a deep URL. Open every UAT with the happy-path check: exercise the happy path of each earlier feature this phase's features depend on, per their Dependencies, or share a screen with, per the UI spec. It is the whole regression check. In `phase` mode, anything broken on the way in or in this check is a deviation of the phase under test.
 
@@ -102,11 +102,11 @@ Routing, exactly one per deviation: developer — the spec is clear and the impl
       {NN}-{feature}-tests.md
     04-non-functional-requirements.md
     05-future-features.md
-  /changes/   CHANGES-v{version}.md, one per version, written by you
+  /changes/   CHANGES-v{version}.md, one per version, written by you. A change note in the folder with an `Integrates:` line is written by the prd-version script when versions from two branches are joined; leave it as it is. Bump from its version like any other.
   SUMMARY.md  written by the prd-version script; never edit it
 ```
 
-UAT report, to `/.agentic-reviews/uat/uat-review-phase-{N}-run-{R}.md` (`flow` mode: `uat-review-flow-{slug}-run-{R}.md`; `full` mode: `uat-review-full-run-{R}.md`; `manual` mode: `uat-review-manual-{slug}-run-{R}.md`):
+UAT report, to `/.agentic-reviews/uat/uat-review-phase-{N}-run-{R}.md` (`flow` mode: `uat-review-flow-{slug}-run-{R}.md`; `full` mode: `uat-review-full-{slug}-run-{R}.md`, the slug from the task; `manual` mode: `uat-review-manual-{slug}-run-{R}.md`):
 
 ```
 # UAT review — Phase {N} Run {R}

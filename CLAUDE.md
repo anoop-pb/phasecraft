@@ -20,7 +20,7 @@ Roles — use these exact names wherever a role is named:
 Terms:
 
 - **Worker** — any role other than operator, spawned by the operator for one task.
-- **Phase** — the unit of work. A set of features built and verified together.
+- **Phase** — the unit of work. A set of features built and verified together. Each has a phase ID, written as `N` in these files: six random characters, or a number in a plan made before IDs. It never changes and sets no order; the plan's order sets the sequence.
 - **Gate** — a verification step a phase must pass.
 - **Fix-build** — a developer run that fixes the findings routed to it in the latest review or UAT reports, or applies the spec or architecture changes made to settle a finding.
 - **Gap** — a finding from a review: the code or tests fall short of the architecture, a security decision, or the specs’ coverage.

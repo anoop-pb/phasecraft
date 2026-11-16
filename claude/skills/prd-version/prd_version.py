@@ -6,12 +6,19 @@ Subcommands:
       Reads {prd}/sections/, writes {prd}/SUMMARY.md (version, feature index,
       cross-feature interactions, NFR lines).
   check --to X.Y[.Z] [--from A] [--root DIR]
-      Compares the section files changed since git tag prd-v{A} with the
+      Compares the section files changed since the last commit with the
       section files listed in {prd}/changes/CHANGES-v{X.Y[.Z]}.md, checks
-      that every row's Type is new, changed, or clarified, and that the
-      version step matches the highest row type (new: major, changed: minor,
-      clarified only: patch). Exits 1 on any mismatch. Without --from (first
-      version), checks only the note's existence and row types.
+      that every row's Type is new, changed, or clarified, that the step
+      from version A matches the highest row type (new: major, changed:
+      minor, clarified only: patch; numbers may be skipped), and that no
+      feature number or NFR ID is used twice. Exits 1 on any mismatch.
+      Without --from (first version), skips the comparison and the step.
+  integrate --version X.Y[.Z] --previous P --integrates A [B ...] [--root DIR]
+      Writes the change note of an integration version: versions A, B, ...
+      cut on this branch, joined with the higher version P merged in from
+      the default branch. The note carries no rows. Checks that the step
+      from P matches the highest row type in the notes of A, B, ...; then
+      writes the summary.
 
 {prd} is the PRD root: the `PRD root` row of REPO-MAP.md at the repo root,
 or prd/ when REPO-MAP.md or the row is absent.
@@ -26,6 +33,7 @@ import sys
 from pathlib import Path
 
 FEATURE_RE = re.compile(r"^(\d+)-(.+?)(-tests)?\.md$")
+NFR_ID_RE = re.compile(r"^[-*]\s*(NFR-\d+)\b", re.I)
 PRD_ROOT_ROW = re.compile(r"^\|\s*PRD root\s*\|\s*`([^`]+)`\s*\|", re.I)
 
 
@@ -59,6 +67,23 @@ def feature_specs(fr_dir: Path):
         m = FEATURE_RE.match(p.name)
         if m and not m.group(3):
             out.append((m.group(1), m.group(2), p))
+    return out
+
+
+def duplicates(sections: Path) -> list:
+    """Problems: a feature number or NFR ID used more than once."""
+    out, feats, ids = [], {}, {}
+    fr_dir = sections / "03-functional-requirements"
+    for num, name, _ in (feature_specs(fr_dir) if fr_dir.is_dir() else []):
+        feats.setdefault(int(num), []).append(f"{num}-{name}")
+    out += [f"feature number {n} used twice: {', '.join(v)}"
+            for n, v in sorted(feats.items()) if len(v) > 1]
+    nfr = sections / "04-non-functional-requirements.md"
+    for ln in (read(nfr).splitlines() if nfr.exists() else []):
+        m = NFR_ID_RE.match(ln.strip())
+        if m:
+            ids[m.group(1).upper()] = ids.get(m.group(1).upper(), 0) + 1
+    out += [f"NFR ID {i} used {c} times" for i, c in sorted(ids.items()) if c > 1]
     return out
 
 
@@ -98,6 +123,7 @@ def cmd_summary(args):
     sections = root / prd / "sections"
     if not sections.is_dir():
         die(f"{sections} not found")
+    report(duplicates(sections))
     fr_dir = sections / "03-functional-requirements"
     feats = feature_specs(fr_dir) if fr_dir.is_dir() else []
     by_int = {int(num): (num, name) for num, name, _ in feats}
@@ -146,16 +172,6 @@ def version_forms(v: str) -> list:
     return [v]
 
 
-def find_tag(root: Path, v: str) -> str:
-    for form in version_forms(v):
-        tag = f"prd-v{form}"
-        r = subprocess.run(["git", "-C", str(root), "rev-parse", "-q", "--verify",
-                            f"refs/tags/{tag}"], capture_output=True, text=True)
-        if r.returncode == 0:
-            return tag
-    die(f"no git tag prd-v{v}")
-
-
 def git(root: Path, *argv) -> list:
     # quotepath=off: git otherwise quotes non-ASCII paths, and they would not match the prefix.
     r = subprocess.run(["git", "-C", str(root), "-c", "core.quotepath=off", *argv],
@@ -194,27 +210,33 @@ def parse_version(v: str):
 
 
 def version_step(frm: str, to: str):
-    """The bump class from one version to the next, or None if not a single step."""
+    """The bump class from one version to a later one, or None if it is none.
+    Numbers may be skipped: another branch may hold the ones between."""
     a, b = parse_version(frm), parse_version(to)
-    if b == (a[0] + 1, 0, 0):
+    if b[0] > a[0] and b[1:] == (0, 0):
         return "major"
-    if b == (a[0], a[1] + 1, 0):
+    if b[0] == a[0] and b[1] > a[1] and b[2] == 0:
         return "minor"
-    if b == (a[0], a[1], a[2] + 1):
+    if b[:2] == a[:2] and b[2] > a[2]:
         return "patch"
     return None
+
+
+def find_note(root: Path, prd: Path, v: str):
+    notes = [root / prd / "changes" / f"CHANGES-v{f}.md" for f in version_forms(v)]
+    return next((n for n in notes if n.exists()), None), notes[0]
 
 
 def cmd_check(args):
     root = Path(args.root).resolve()
     prd = prd_root(root)
-    notes = [root / prd / "changes" / f"CHANGES-v{v}.md" for v in version_forms(args.to)]
-    note = next((n for n in notes if n.exists()), None)
+    note, wanted = find_note(root, prd, args.to)
     if note is None:
-        die(f"{notes[0]} not found — the product manager writes it", 1)
+        die(f"{wanted} not found — the product manager writes it", 1)
     rows = note_rows(note)
     problems = [f"row without a valid Type (new | changed | clarified): {f}"
                 for f, t in rows if t not in TYPES]
+    problems += duplicates(root / prd / "sections")
     if not args.frm:
         report(problems)
         print(f"first version: {note.name} exists, {len(rows)} typed row(s); no comparison")
@@ -225,10 +247,10 @@ def cmd_check(args):
         expected = BUMPS[max(TYPES[t] for t in typed)]
         if step != expected:
             problems.append(f"version step v{args.frm} -> v{args.to} is "
-                            f"{step or 'not a single bump'}; "
+                            f"{step or 'not a bump'}; "
                             f"highest row type requires a {expected} bump")
     prefix = (prd / "sections").as_posix() + "/"
-    changed = git(root, "diff", "--name-only", find_tag(root, args.frm), "--", prefix)
+    changed = git(root, "diff", "--name-only", "HEAD", "--", prefix)
     changed += git(root, "ls-files", "--others", "--exclude-standard", "--", prefix)
     changed = {p[len(prefix):] for p in changed if p.startswith(prefix)}
     listed = {f for f, _ in rows}
@@ -236,6 +258,40 @@ def cmd_check(args):
     problems += [f"in change note but not changed: {p}" for p in sorted(listed - changed)]
     report(problems)
     print(f"ok: {len(changed)} changed section file(s), all in {note.name}")
+
+
+def cmd_integrate(args):
+    root = Path(args.root).resolve()
+    prd = prd_root(root)
+    note, wanted = find_note(root, prd, args.version)
+    if note is not None:
+        die(f"{note} already exists", 1)
+    types = []
+    for v in args.integrates:
+        n, w = find_note(root, prd, v)
+        if n is None:
+            die(f"{w} not found", 1)
+        types += [t for _, t in note_rows(n) if t in TYPES]
+    if not types:
+        die("the integrated versions carry no typed rows", 1)
+    expected = BUMPS[max(TYPES[t] for t in types)]
+    step = version_step(args.previous, args.version)
+    if step != expected:
+        die(f"version step v{args.previous} -> v{args.version} is {step or 'not a bump'}; "
+            f"the integrated versions require a {expected} bump", 1)
+    wanted.write_text("\n".join([
+        f"# Changes — v{args.version}",
+        f"Previous version: v{args.previous}",
+        "Integrates: " + ", ".join(f"v{v}" for v in args.integrates),
+        f"Date: {datetime.date.today().isoformat()}", "",
+        "Integration version, written by prd-version. It joins the integrated versions, "
+        f"cut on a branch, with v{args.previous} from the default branch. It changes no "
+        "section file; the change notes of the integrated versions list the changes.", "",
+        "| Section file | Feature | Type | Change | Behaviour change | Related features |",
+        "|--------------|---------|------|--------|------------------|------------------|",
+    ]) + "\n", encoding="utf-8")
+    print(wanted)
+    cmd_summary(args)
 
 
 def report(problems):
@@ -258,6 +314,12 @@ def main():
     c.add_argument("--from", dest="frm")
     c.add_argument("--root", default=".")
     c.set_defaults(fn=cmd_check)
+    i = sub.add_parser("integrate")
+    i.add_argument("--version", required=True)
+    i.add_argument("--previous", required=True)
+    i.add_argument("--integrates", required=True, nargs="+")
+    i.add_argument("--root", default=".")
+    i.set_defaults(fn=cmd_integrate)
     args = ap.parse_args()
     args.fn(args)
 

@@ -15,9 +15,9 @@ When the user or a schedule asks for maintenance, keep the codebase healthy with
 
 ## Full architecture review
 
-Run one when the user asks, or in maintenance. The architect reviews the whole code root; name in the task any areas the latest full review did not reach, which it covers first. Before it runs, remove accepted findings whose code has changed since they were accepted.
+Run one when the user asks, or in maintenance. The architect reviews the whole code root; name in the task a slug, and any areas the latest full review did not reach, which it covers first. Before it runs, remove accepted findings whose code has changed since they were accepted.
 
-Completed phases are frozen, so Critical and Major findings routed to the developer, and `rising` Minor findings, become carry-forward fixes; the next phase's architecture review confirms them closed. Other Minor findings go to the Minor findings list, with `found in full review run R` in place of the phase. Findings the tracker already holds stay as they are. A finding routed to another role goes to that role, or to the user where the intent does not settle it. Record the run and verdict on the tracker's Latest full arch review line.
+Completed phases are frozen, so Critical and Major findings routed to the developer, and `rising` Minor findings, become carry-forward fixes; the next phase's architecture review confirms them closed. Other Minor findings go to the Minor findings list, with `found in full review run R` in place of the phase. Findings the tracker already holds stay as they are. A finding routed to another role goes to that role, or to the user where the intent does not settle it. Record the report filename and verdict on the tracker's Latest full arch review line.
 
 ## Autofix issues
 

@@ -10,9 +10,9 @@ An unattended session does the work its task names, such as maintenance or autop
 ## Where to work
 
 - All unattended work goes on one branch: the newest `claude/phasecraft/*` branch whose PR is open, or that has no PR yet. A merged PR ends that branch. If there is none, cut `claude/phasecraft/{date}` from the default branch. If the newest such branch's PR was closed unmerged, act on a comment on why it was closed, then cut a new branch; with no such comment, ask on that PR and stop.
-- At the start, merge the default branch into it. Resolve conflicts by file owner: you for the files you write, the owning role for the rest, then run the verification commands. Code the resolution changed is reviewed with the next phase built, and the PR lists the files. A conflict that needs a decision: ask.
 - A phase in progress on the branch is finished before any other work.
-- While this branch’s PR is ready for review and unmerged, do nothing; stop.
+- Sync with the default branch when Parallel work in the operator role file calls for it. A conflict that needs a decision: ask.
+- While this branch’s PR is ready for review and unmerged, do nothing, not even a sync; stop.
 - While a question on this branch is open, start no new phase. Reviews and autofix intake go on.
 - A push rejected because the remote moved means another run is working: stop.
 - While a branch other than this one, not yet merged into the default branch, has changed the tracker or the plan, build nothing; ask, naming it. Reviews and `autofix` intake go on.
@@ -35,7 +35,7 @@ Where an active intent exists, its boundaries and settings hold. Three exception
 
 ## Delivery
 
-Push the branch after every unit of work, whatever the active intent’s delivery setting says. Open its PR as a draft at the first push. Before ending a session that added work, run the full UAT the operator role file requires, where one applies; mark the PR ready once it is CLEAR and no question on the branch is open.
+Push the branch after every unit of work, whatever the active intent’s delivery setting says. Open its PR as a draft at the first push, with its Claims block; the branch claims its numbers and holds the PRD lock like any other. Before ending a session that added work, run the full UAT the operator role file requires, where one applies; mark the PR ready once it is CLEAR and no question on the branch is open.
 
 ## Ending
 

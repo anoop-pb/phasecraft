@@ -57,7 +57,7 @@ specs → UI design → architecture → plan → per phase: build → architect
 
 - **Discussion stages.** You discuss specs, UI design, and architecture with the operator. It records the outcome in a brief. A worker writes the formal artifact from that brief. UI design is skipped for a project without a user interface.
 - **Specs are versioned.** Each spec change gets a change note and a git tag, `prd-v{version}`. The type of each change decides what runs next. New and changed features go back through design and architecture. Clarifications go straight to the planner.
-- **Phases and gates.** The planner divides features into phases. Each phase passes up to five gates, in order: build, architecture review, security review, QA review, and UAT. Security review and UAT run where the plan says they apply. UAT drives a browser, so it covers web interfaces only. The build gate passes on verification output the operator produces itself, not on the developer's word. Any code change sends the phase back through its reviews.
+- **Phases and gates.** The planner divides features into phases. Each phase has a short random ID, such as `3fa91c`; the order of the plan sets the sequence, not the ID. Each phase passes up to five gates, in order: build, architecture review, security review, QA review, and UAT. Security review and UAT run where the plan says they apply. UAT drives a browser, so it covers web interfaces only. The build gate passes on verification output the operator produces itself, not on the developer's word. Any code change sends the phase back through its reviews.
 - **Findings.** Critical and Major findings are fixed in one batch, then reviewed again. Minor findings never block. A phase whose same gate still finds problems after two fixes comes to you.
 - **Completed phases are frozen.** A defect found later is fixed as forward work in a later phase.
 - **Wider UAT.** A user flow that spans phases is tested end to end once its last phase is complete. A full UAT runs when the intent's work is complete, and before a PR is opened for review or marked ready.
@@ -74,11 +74,11 @@ Work runs on a confirmed intent file the operator records under `/intents/record
 - Review preference: pause for your review at the end of each discussion stage and each phase, or run through.
 - Number of phases per session.
 - Delivery options: commit only, push a branch, or push and open a PR.
-- The branch the work goes on: `phasecraft/NNN--slug`, mirroring the intent file, unless you name another. After onboarding, the operator never commits on the default branch.
+- The branch the work goes on: `phasecraft/NNN--slug`, mirroring the intent file, unless you name another. After onboarding, the operator never commits on the default branch. Where the repo has a code host, the operator opens a draft PR for the branch when you confirm the intent (see Working in a team).
 
 You can bring issues from your code host into an intent. The operator records them in the intent file and keeps their status in step with the work. An issue on its own is never a confirmed intent. Bug reports are different: issues labelled `autofix` are checked against the current specs and fixed as forward work. Say "pick up the autofix issues", or let maintenance take them.
 
-Your answers to the operator's questions are appended to the file. A change of intent replaces it with a new file. The intent file is the contract the operator answers to. It is also how a new session knows what you authorized.
+Your answers to the operator's questions are appended to the file. A change of intent replaces it with a new file; the work stays on the same branch. The intent file is the contract the operator answers to. It is also how a new session knows what you authorized.
 
 Irrespective of the review preference, the following always come to you:
 
@@ -86,12 +86,12 @@ Irrespective of the review preference, the following always come to you:
 - UAT deviations rated Major or Critical, and any other that the operator is unsure about. With no one present in an unattended session, a deviation found from an issue you labelled `autofix` counts as already seen, and a Major deviation against a clear spec is fixed and listed in the PR; Critical ones still wait for you.
 - Changes to Non-Negotiables — architecture decisions marked as costly to reverse — and security decisions that change cost, the risk you accept, or what the app's end users must do.
 - A phase whose same gate still finds problems after two rounds of fixes.
-- A proposed corrective-only phase, for fixes that have piled up. Maintenance with no one present is the exception: it may add and build a corrective-only phase without asking.
+- A proposed corrective-only phase, for fixes that have piled up. Two cases add and build a corrective-only phase without asking: maintenance with no one present, and bringing the default branch into an intent's branch when that needs a code conflict resolved, or a fix for something it broke, and no phase is left to build.
 - Moving a task to a cheaper model.
 
 You can also report problems you find yourself. The operator passes them to a UAT run, which checks them against the specs.
 
-The operator never pushes to the default branch and never force-pushes. It opens a PR, or marks a draft ready, only when the full UAT is CLEAR and no Critical or Major fix is still open, unless you tell it to open the PR anyway. It merges a PR only when you tell it to merge that PR in the current session, and only after the PR's checks pass.
+The operator never pushes to the default branch and never force-pushes. It opens a PR for review, or marks a draft ready, only when the full UAT is CLEAR and no Critical or Major fix is still open, unless you tell it to open the PR anyway. It merges a PR only when you tell it to merge that PR in the current session, and only after the PR's checks pass.
 
 ## The roles
 
@@ -192,11 +192,32 @@ The cloud session needs a browser, and your application must start there from th
 
 Everything that matters is in files in git: the tracker, intent files, briefs, and reports. Commit and push per the intent's delivery setting. Another engineer can then pick up the project by starting a session; the operator orients from the repo map and the tracker. Coding standards live in `CODING-STANDARDS.md`. If you have not filled in a stack-specific section, the developer adds one at the first build.
 
+### Parallel intents
+
+Two or more people can each run an intent at the same time, on separate branches, when the intents touch different parts of the product. This needs a code host (e.g. GitHub) and its CLI.
+
+- **Draft PRs show who is doing what.** The operator opens a draft PR when you confirm an intent. The PR body lists what the branch has claimed: its intent number, its PRD versions, its feature numbers, and the carry-forward fixes it takes. Every operator reads the open PRs before it takes a number.
+- **The intent file is always pushed**, when you confirm it and at each amendment, even with delivery set to commit only. That push carries the branch's commits so far.
+- **Spec work runs on one branch at a time.** A `prd-in-progress` label on the PR shows whose turn it is. The other intents wait for spec work only; their builds go on.
+- **Overlap comes to you.** If any two open intents change the same feature, the operator asks you before design or planning runs on it.
+- **Syncing.** Once the default branch has moved, an intent branch merges it in before its next phase is built, and always before its full UAT. The role that owns a file resolves its conflicts. Conflicts in code are resolved as part of that next phase's build, so its reviews and UAT cover them; with no phase left, a corrective-only phase carries them. The UI designer, the architect, and the planner check the other intents' spec changes only where this branch changed their files.
+- **PRD versions stay in order.** If any other intent lands a higher version first, the script cuts an integration version on top that joins the two. Earlier change notes, tags, and reports are not renamed or rewritten.
+- **Phase IDs are random**, so two branches never pick the same one.
+- **Dropping an intent.** Close its PR. Its claims are released, and the numbers it used stay as gaps. Close stale draft PRs too: an open PR keeps its claims.
+
+Start each session on your own intent's branch; the tracker there is the one that describes your work.
+
+If the same person runs two intents at once, run each in its own environment, such as a cloud session. Two local worktrees share the machine's ports and local data stores, so their applications clash when both start.
+
+Without a code host, run one intent at a time. When you move a local project to a code host with an intent in progress, push the default branch and the intent's branch, then start a session on that intent before anyone starts a second one. The operator opens its draft PR and records the numbers it already uses.
+
 ## Updating the framework
 
 Copy the new `CLAUDE.md` over the old one. From the new `claude` folder, copy agents/, templates/, skills/ and PHASECRAFT-VERSION into your `.claude` folder, replacing the old ones. Keep your local settings files.
 
 Sessions pick up the changes on their next start. Existing artifacts and reports are unaffected.
+
+From version 2.2.0-beta, two or more intents can run at once (see Working in a team). The operator now opens a draft PR for every intent where the repo has a code host. New phases get random IDs in place of numbers. Phases, PRD versions, and reports that already exist keep their numbers and names. In a project with open carry-forward fixes, run one session after updating and merge its work before a second intent starts, so every open fix has one ID.
 
 From version 2.1.2-beta, verification output is not committed. In an existing project, add `/.agentic-reviews/build/verify-phase-*.txt` to `.gitignore`.
 
@@ -214,7 +235,7 @@ The three main benefits over 0.7:
 2. **Stronger verification.** 2.0 adds a security review gate and a maintainability check in the architecture review. The build gate rests on output the operator re-runs itself — tests, lint, type checks, and a dependency audit — not on test results the developer saved.
 3. **Existing codebases.** Brownfield onboarding derives the missing artifacts from existing code (best-effort basis). 0.7 supported new projects only.
 
-2.0 is also more than 50% smaller than 0.7. Each session loads only the shared rules and its own role file, about 2,000 to 5,500 words.
+2.0 is also more than 50% smaller than 0.7. Each session loads only the shared rules and its own role file, about 2,300 to 6,700 words.
 
 Dropped from 0.7, and what replaced each:
 
