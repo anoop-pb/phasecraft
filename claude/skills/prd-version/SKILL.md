@@ -15,7 +15,7 @@ python3 .claude/skills/prd-version/prd_version.py check --from 1.1 --to 1.2
 
 Checks `{prd}/changes/CHANGES-v1.2.md` four ways, and exits 1 naming each problem:
 
-- Its first column lists exactly the section files changed since the last commit, including new untracked files.
+- Its first column lists exactly the section files changed since the last commit, including new untracked files. While a merge is in progress and not yet committed, a file counts only where it differs from both this branch’s last commit and the last commit of the branch being merged in. This leaves out files the specs task did not touch.
 - Every row's Type is `new`, `changed`, or `clarified`.
 - The step from 1.1 to 1.2 is the bump the highest row type requires: `new` → major, `changed` → minor, `clarified` only → patch. A step may skip numbers another branch holds: 1.1 to 1.3 is still a minor bump.
 - No feature number and no NFR ID is used twice.

@@ -13,6 +13,9 @@ Subcommands:
       minor, clarified only: patch; numbers may be skipped), and that no
       feature number or NFR ID is used twice. Exits 1 on any mismatch.
       Without --from (first version), skips the comparison and the step.
+      While a merge is in progress and not yet committed, a section file
+      counts as changed only where it differs from both this branch and the
+      branch being merged in.
   integrate --version X.Y[.Z] --previous P --integrates A [B ...] [--root DIR]
       Writes the change note of an integration version: versions A, B, ...
       cut on this branch, joined with the higher version P merged in from
@@ -251,6 +254,11 @@ def cmd_check(args):
                             f"highest row type requires a {expected} bump")
     prefix = (prd / "sections").as_posix() + "/"
     changed = git(root, "diff", "--name-only", "HEAD", "--", prefix)
+    merging = subprocess.run(["git", "-C", str(root), "rev-parse", "-q", "--verify", "MERGE_HEAD"],
+                             capture_output=True).returncode == 0
+    if merging:  # merge in progress: count only files that differ from this branch and the merged-in branch
+        theirs = set(git(root, "diff", "--name-only", "MERGE_HEAD", "--", prefix))
+        changed = [p for p in changed if p in theirs]
     changed += git(root, "ls-files", "--others", "--exclude-standard", "--", prefix)
     changed = {p[len(prefix):] for p in changed if p.startswith(prefix)}
     listed = {f for f, _ in rows}

@@ -20,7 +20,7 @@ Roles — use these exact names wherever a role is named:
 Terms:
 
 - **Worker** — any role other than operator, spawned by the operator for one task.
-- **Phase** — the unit of work. A set of features built and verified together. Each has a phase ID, written as `N` in these files: six random characters, or a number in a plan made before IDs. It never changes and sets no order; the plan's order sets the sequence.
+- **Phase** — the unit of work. A set of features built and verified together. Each has a phase ID, written as `N` in these files: six random characters, or a number in a plan made before IDs. It never changes and sets no order; the plan's order sets the sequence. Each phase also has a short name, set in the plan, which is how it is named to the user.
 - **Gate** — a verification step a phase must pass.
 - **Fix-build** — a developer run that fixes the findings routed to it in the latest review or UAT reports, or applies the spec or architecture changes made to settle a finding.
 - **Gap** — a finding from a review: the code or tests fall short of the architecture, a security decision, or the specs’ coverage.
@@ -28,7 +28,7 @@ Terms:
 - **Brief** — a file the operator writes to carry the user's confirmed direction into a worker task.
 - **Tracker** — `TRACKER.md` at the repo root. It records where things stand: phase status, verification state, in-flight work, open decisions. Only the operator writes it.
 - **Repo map** — `REPO-MAP.md` at the repo root. It records where everything lives. Recorded locations and conventions are binding. Where it is silent, a session chooses, then records the choice through the operator.
-- **Carry-forward fix** — a review or UAT finding left unfixed for cause, recorded in the tracker by the operator. Carry-forwards are fixed ahead of any new scope.
+- **Carry-forward fix** — a review or UAT finding left unfixed for cause, recorded in the tracker by the operator. Carry-forwards are fixed ahead of any new scope, by the branch that claims them.
 - **Corrective-only phase** — a phase that holds only carry-forward fixes, with no new scope.
 - **Non-Negotiable** — an architecture decision marked as costly to reverse. Changing one needs explicit user approval.
 
@@ -88,6 +88,7 @@ Minor: {location} — {finding, one line} — risk: low | rising
 A worker does one task and hands back. Rules for every worker:
 
 - It delivers the current stated scope in full. No extras, no fixing-while-in-there, no quiet narrowing. It reports anything out of scope in the handoff; the operator routes it.
+- It makes the smallest change that fully meets the stated need. It specs, designs, or builds for the cases the intent, the brief, and the domain make real, not for every case that could arise. It adds nothing for a later need; where leaving one out would be costly to reverse, it asks. This limits what is made, never how well it is made or checked: the failure paths of what is in scope, the tests, and the reviews stay complete.
 - It never does another role's work. It records and reports it instead.
 - It stays inside its role file's read and write boundaries.
 - It takes facts about the project only from the repo and the task, never from assumption. It applies its own expertise freely.

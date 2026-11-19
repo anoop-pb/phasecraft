@@ -18,7 +18,7 @@ The operator asks before it assumes. It records what you decide. It brings back 
 
 ## Coming from PhaseCraft 0.x
 
-PhaseCraft 2.0 is a major rewrite of PhaseCraft 0.7. There is no migration path. A project already under way on 0.7 finishes on 0.7; use 2.0 for new work. For what triggered the rewrite and how 2.0 is better, see [Why 2.0](#why-phasecraft-20).
+PhaseCraft 2.0 is a major rewrite of PhaseCraft 0.7. There is no migration path. A project already under way on 0.7 finishes on 0.7; use 2.0 for new work. For what triggered the rewrite, see [Why 2.0](#why-phasecraft-20).
 
 ## Getting started
 
@@ -57,13 +57,13 @@ specs → UI design → architecture → plan → per phase: build → architect
 
 - **Discussion stages.** You discuss specs, UI design, and architecture with the operator. It records the outcome in a brief. A worker writes the formal artifact from that brief. UI design is skipped for a project without a user interface.
 - **Specs are versioned.** Each spec change gets a change note and a git tag, `prd-v{version}`. The type of each change decides what runs next. New and changed features go back through design and architecture. Clarifications go straight to the planner.
-- **Phases and gates.** The planner divides features into phases. Each phase has a short random ID, such as `3fa91c`; the order of the plan sets the sequence, not the ID. Each phase passes up to five gates, in order: build, architecture review, security review, QA review, and UAT. Security review and UAT run where the plan says they apply. UAT drives a browser, so it covers web interfaces only. The build gate passes on verification output the operator produces itself, not on the developer's word. Any code change sends the phase back through its reviews.
-- **Findings.** Critical and Major findings are fixed in one batch, then reviewed again. Minor findings never block. A phase whose same gate still finds problems after two fixes comes to you.
+- **Phases and gates.** The planner divides features into phases. Each phase has a short random ID, such as `3fa91c`; the order of the plan sets the sequence, not the ID. The operator names a phase to you by its short name from the plan. Each phase passes up to five gates, in order: build, architecture review, security review, QA review, and UAT. Security review and UAT run where the plan says they apply. UAT drives a browser, so it covers web interfaces only. The build gate passes on verification output the operator produces itself, not on the developer's word. Any code change sends the phase back through its reviews.
+- **Findings.** Critical and Major findings are fixed in one batch, then reviewed again. Minor findings never block.
 - **Completed phases are frozen.** A defect found later is fixed as forward work in a later phase.
-- **Wider UAT.** A user flow that spans phases is tested end to end once its last phase is complete. A full UAT runs when the intent's work is complete, and before a PR is opened for review or marked ready.
+- **Wider UAT.** A user flow that spans phases is tested end to end once its last phase is complete. A full UAT runs when the intent's work is complete.
 - **Full architecture review.** On request, or in a maintenance run after new phases have completed, the architect reviews the whole codebase, across phases. It finds the drift, duplication, and eroded design that phase reviews cannot see. Its serious findings become carry-forward fixes.
 
-**Sessions stay short on purpose.** A session's context fills up with discussion and worker handoffs. As it fills, quality drops. When Claude Code compacts it, detail is lost. So each discussion stage gets its own session, and a build session covers at most 2 phases by default. You can change that number in the intent. At a limit, the operator stops at a clean boundary and asks you to start a new session. The tracker and the other files carry everything across, so nothing is lost.
+**Sessions stay short on purpose.** A session's context fills up with discussion and worker handoffs. As it fills, quality drops. When Claude Code compacts it, detail is lost. So a discussion stage that took real discussion with you ends its session, and a session builds at most 2 phases by default. A stage your intent already settles runs on without a break. You can change that number in the intent. At a limit, the operator stops at a clean boundary and asks you to start a new session. The tracker and the other files carry everything across, so nothing is lost.
 
 ## Your intent and what reaches you
 
@@ -153,7 +153,7 @@ To run one with no one present, create a Claude Code routine on the repo with a 
 ### With no one present
 
 - **One branch, one PR.** All work goes on one `claude/phasecraft/{date}` branch, pushed after every step whatever your intent's delivery setting. Its draft PR is marked ready once it passes UAT. While that PR is ready for review, nothing more is added to it. Neither mode ever merges. So autopilot delivers at most one session's phases — 2 by default — per PR you merge; raise the phases-per-session number in the intent to get more per PR.
-- **Your own work.** Attended work stays on its own branches. Unattended work cannot see them: while another unmerged branch has changed the plan or tracker, it reviews and takes up `autofix` issues but builds nothing, and asks you. The same holds the other way: an attended session builds nothing while a routine's PR with built phases is open. Merge or close it first.
+- **Your own work.** Attended work stays on its own branches. A routine's branch is one more parallel branch (see Working in a team). Its PR lists the phases it builds. No other branch builds those, or the phases after them, until you merge or close that PR.
 - **Discussion stages** stay with you.
 
 ### When it needs you
@@ -196,13 +196,12 @@ Everything that matters is in files in git: the tracker, intent files, briefs, a
 
 Two or more people can each run an intent at the same time, on separate branches, when the intents touch different parts of the product. This needs a code host (e.g. GitHub) and its CLI.
 
-- **Draft PRs show who is doing what.** The operator opens a draft PR when you confirm an intent. The PR body lists what the branch has claimed: its intent number, its PRD versions, its feature numbers, and the carry-forward fixes it takes. Every operator reads the open PRs before it takes a number.
-- **The intent file is always pushed**, when you confirm it and at each amendment, even with delivery set to commit only. That push carries the branch's commits so far.
+- **Draft PRs show who is doing what.** The operator opens a draft PR when you confirm an intent. The PR body lists what the branch has claimed: its intent number, its PRD versions, its feature numbers, the phases it builds, and the carry-forward fixes it takes. Every operator reads the open PRs before it takes a number, a phase, or a fix. A fix another PR has taken does not hold up your own PR.
+- **The intent file is always pushed**, even with delivery set to commit only: when you confirm it, and then each amendment with the work it settles. That push carries the branch's commits so far.
 - **Spec work runs on one branch at a time.** A `prd-in-progress` label on the PR shows whose turn it is. The other intents wait for spec work only; their builds go on.
 - **Overlap comes to you.** If any two open intents change the same feature, the operator asks you before design or planning runs on it.
-- **Syncing.** Once the default branch has moved, an intent branch merges it in before its next phase is built, and always before its full UAT. The role that owns a file resolves its conflicts. Conflicts in code are resolved as part of that next phase's build, so its reviews and UAT cover them; with no phase left, a corrective-only phase carries them. The UI designer, the architect, and the planner check the other intents' spec changes only where this branch changed their files.
-- **PRD versions stay in order.** If any other intent lands a higher version first, the script cuts an integration version on top that joins the two. Earlier change notes, tags, and reports are not renamed or rewritten.
-- **Phase IDs are random**, so two branches never pick the same one.
+- **Syncing.** Once the default branch has moved, an intent branch merges it in before its next phase is built, and always before its full UAT. Conflicts in code are resolved as part of that next phase's build, so its reviews and UAT cover them; with no phase left, a corrective-only phase carries them.
+- **PRD versions stay in order.** If any other intent lands a higher version first, an integration version joins the two.
 - **Dropping an intent.** Close its PR. Its claims are released, and the numbers it used stay as gaps. Close stale draft PRs too: an open PR keeps its claims.
 
 Start each session on your own intent's branch; the tracker there is the one that describes your work.
@@ -217,7 +216,7 @@ Copy the new `CLAUDE.md` over the old one. From the new `claude` folder, copy ag
 
 Sessions pick up the changes on their next start. Existing artifacts and reports are unaffected.
 
-From version 2.2.0-beta, two or more intents can run at once (see Working in a team). The operator now opens a draft PR for every intent where the repo has a code host. New phases get random IDs in place of numbers. Phases, PRD versions, and reports that already exist keep their numbers and names. In a project with open carry-forward fixes, run one session after updating and merge its work before a second intent starts, so every open fix has one ID.
+From version 2.2.0-beta, two or more intents can run at once (see Working in a team). The operator now opens a draft PR for every intent where the repo has a code host. New phases get random IDs in place of numbers. Phases, PRD versions, and reports that already exist keep their numbers and names. The tracker's Phases table gains an Intent column, which the operator adds on its next update. In a project with open carry-forward fixes, run one session after updating and merge its work before a second intent starts, so every open fix has one ID.
 
 From version 2.1.2-beta, verification output is not committed. In an existing project, add `/.agentic-reviews/build/verify-phase-*.txt` to `.gitignore`.
 
@@ -229,20 +228,4 @@ PhaseCraft 0.x told models how to work: step lists, entry banners, orchestration
 - Formats are fixed only where two sessions must interoperate. For instance: the tracker, reports, the plan, and the runtime handle.
 - Firm rules remain only where models tend to cut corners or where a mistake is costly to undo. Examples: weakening tests to pass, quiet scope changes, and touching live cloud resources.
 
-The three main benefits over 0.7:
-
-1. **One conversation.** 0.7 had fourteen slash commands and three modes. In 2.0 you talk to the operator, and the review preference in your intent sets where it stops for you.
-2. **Stronger verification.** 2.0 adds a security review gate and a maintainability check in the architecture review. The build gate rests on output the operator re-runs itself — tests, lint, type checks, and a dependency audit — not on test results the developer saved.
-3. **Existing codebases.** Brownfield onboarding derives the missing artifacts from existing code (best-effort basis). 0.7 supported new projects only.
-
-2.0 is also more than 50% smaller than 0.7. Each session loads only the shared rules and its own role file, about 2,300 to 6,700 words.
-
-Dropped from 0.7, and what replaced each:
-
-- **Slash commands and the three modes** → the operator, with the review preference.
-- **The Orchestrator agent and the build and UAT loops** → the operator, which sequences every gate itself.
-- **The Project Manager agent** → the operator runs onboarding and keeps the tracker; the planner writes the plan.
-- **Entry banners** → the operator's status report and each worker's handoff.
-- **Messages between agents** → one-line notes in a worker's handoff, which the operator records and passes on. The operator now sees everything that moves between roles.
-- **Reopening a completed phase for UAT defects** → completed phases stay frozen; fixes go forward in a later phase.
-- **Compiled PRD snapshots** → a git tag per spec version, `prd-v{version}`.
+2.0 is also more than 50% smaller than 0.7. Each session loads only the shared rules and its own role file. The operator reads a skill only when the work calls for it.

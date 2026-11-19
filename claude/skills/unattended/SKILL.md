@@ -15,7 +15,6 @@ An unattended session does the work its task names, such as maintenance or autop
 - While this branch’s PR is ready for review and unmerged, do nothing, not even a sync; stop.
 - While a question on this branch is open, start no new phase. Reviews and autofix intake go on.
 - A push rejected because the remote moved means another run is working: stop.
-- While a branch other than this one, not yet merged into the default branch, has changed the tracker or the plan, build nothing; ask, naming it. Reviews and `autofix` intake go on.
 
 ## When a human is needed
 
@@ -35,7 +34,7 @@ Where an active intent exists, its boundaries and settings hold. Three exception
 
 ## Delivery
 
-Push the branch after every unit of work, whatever the active intent’s delivery setting says. Open its PR as a draft at the first push, with its Claims block; the branch claims its numbers and holds the PRD lock like any other. Before ending a session that added work, run the full UAT the operator role file requires, where one applies; mark the PR ready once it is CLEAR and no question on the branch is open.
+Push the branch after every unit of work, whatever the active intent’s delivery setting says. Open its PR as a draft at the first push, with its Claims block; the branch makes its claims, phases included, and holds the PRD lock like any other. Before ending a session that added work, run the full UAT the operator role file requires, where one applies; mark the PR ready once it is CLEAR and no question on the branch is open.
 
 ## Ending
 
