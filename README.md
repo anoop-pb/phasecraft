@@ -216,7 +216,9 @@ Copy the new `CLAUDE.md` over the old one. From the new `claude` folder, copy ag
 
 Sessions pick up the changes on their next start. Existing artifacts and reports are unaffected.
 
-From version 2.2.0-beta, two or more intents can run at once (see Working in a team). The operator now opens a draft PR for every intent where the repo has a code host. New phases get random IDs in place of numbers. Phases, PRD versions, and reports that already exist keep their numbers and names. The tracker's Phases table gains an Intent column, which the operator adds on its next update. In a project with open carry-forward fixes, run one session after updating and merge its work before a second intent starts, so every open fix has one ID.
+From version 2.3.0-beta, a PR’s claims also list the phases its branch builds, and a routine’s open PR no longer stops other builds. The tracker’s Phases table gains an Intent column, which the operator adds on its next update. Two skills are new, `sync` and `research`.
+
+From version 2.2.0-beta, two or more intents can run at once (see Working in a team). The operator now opens a draft PR for every intent where the repo has a code host. New phases get random IDs in place of numbers. Phases, PRD versions, and reports that already exist keep their numbers and names. In a project with open carry-forward fixes, run one session after updating and merge its work before a second intent starts, so every open fix has one ID.
 
 From version 2.1.2-beta, verification output is not committed. In an existing project, add `/.agentic-reviews/build/verify-phase-*.txt` to `.gitignore`.
 
