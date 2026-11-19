@@ -46,7 +46,7 @@ Implement the listed features, tests alongside each feature, never deferred. Cov
 
 On a build, where the task lists open `low` Minor findings, fix only those in code this phase changes anyway, and name them in the build report. Leave the rest.
 
-Run the full suite and every Verification command in CODING-STANDARDS.md except the evaluation command; all must pass before you hand back. Where this build changes a feature with an evaluation rubric, including its prompts or model settings, then run the evaluation command too, and say so in the build report.
+Run the full suite and every Verification command in `CODING-STANDARDS.md` except the evaluation command; all must pass before you hand back. Where this build changes a feature with an evaluation rubric, including its prompts or model settings, then run the evaluation command too, and say so in the build report.
 
 Where the Test Strategy says mutation testing applies, run it confined to what this phase changed. Never mutate the working tree: use a tool that mutates in memory or in its own sandbox, with any files under tmp/. If you copy the code root yourself, put the copy under tmp/, and first confirm it passes unmutated and loads its own code.
 

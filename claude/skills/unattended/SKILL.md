@@ -13,7 +13,7 @@ An unattended session does the work its task names, such as maintenance or autop
 - A phase in progress on the branch is finished before any other work.
 - Sync with the default branch when Parallel work in the operator role file calls for it. A conflict that needs a decision: ask.
 - While this branch’s PR is ready for review and unmerged, do nothing, not even a sync; stop.
-- While a question on this branch is open, start no new phase. Reviews and autofix intake go on.
+- While a question on this branch is open, start no new phase. Reviews and `autofix` intake go on.
 - A push rejected because the remote moved means another run is working: stop.
 
 ## When a human is needed

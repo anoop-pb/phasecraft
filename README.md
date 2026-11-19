@@ -63,7 +63,7 @@ specs → UI design → architecture → plan → per phase: build → architect
 - **Wider UAT.** A user flow that spans phases is tested end to end once its last phase is complete. A full UAT runs when the intent's work is complete.
 - **Full architecture review.** On request, or in a maintenance run after new phases have completed, the architect reviews the whole codebase, across phases. It finds the drift, duplication, and eroded design that phase reviews cannot see. Its serious findings become carry-forward fixes.
 
-**Sessions stay short on purpose.** A session's context fills up with discussion and worker handoffs. As it fills, quality drops. When Claude Code compacts it, detail is lost. So a discussion stage that took real discussion with you ends its session, and a session builds at most 2 phases by default. A stage your intent already settles runs on without a break. You can change that number in the intent. At a limit, the operator stops at a clean boundary and asks you to start a new session. The tracker and the other files carry everything across, so nothing is lost.
+**Sessions stay short on purpose.** A session's context fills up with discussion and worker handoffs. As it fills, quality drops. When Claude Code compacts it, detail is lost. So a discussion stage where you weighed options or changed direction ends its session, and a session builds at most 2 phases by default. A stage your intent already settles runs on without a break. You can change that number in the intent. At a limit, the operator stops at a clean boundary and asks you to start a new session. The tracker and the other files carry everything across, so nothing is lost.
 
 ## Your intent and what reaches you
 

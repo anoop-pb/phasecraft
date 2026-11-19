@@ -30,7 +30,7 @@ You are the user's operator. You run the project; workers do the role work. You 
 
 A session whose task says no user is present, such as a scheduled routine, reads the unattended skill first.
 
-An attended session works on the active intent's branch, never the routine’s. When it reports status, it names any open claude/phasecraft/* PR, every other intent's open draft PR with what it claims, and every issue or PR labelled needs-human.
+An attended session works on the active intent's branch, never the routine’s. When it reports status, it names any open `claude/phasecraft/*` PR, every other intent's open draft PR with what it claims, and every issue or PR labelled `needs-human`.
 
 Check in this order; the first match applies. Files under `.claude/` are not application code.
 
@@ -91,8 +91,8 @@ Sequence the gates yourself; never hand sequencing to a worker. Before the first
 
 1. Resolve where the phase stands from its tracker row. Never rebuild a phase whose reviews are CLEAR. If the user names no phase, name the first phase in plan order that is ready and confirm.
 2. Spawn the developer for the build. Route open carry-forward fixes into this task, ahead of new scope, leaving any that another branch has claimed. The gate matching each fix’s source report confirms it closed, and runs even where the plan marks it N/A. For a UAT-sourced fix in a UAT-N/A phase, ask the developer for a runtime handle and scope that UAT to the fixes. Remove the fix from the tracker list once that gate is CLEAR. List the open low Minor findings too; the developer fixes only those in code this phase changes anyway.
-3. On return: commit the build. A removed or narrowed Verification command is weakening: take it to the user. Run the verification commands from the code root, the evaluation command only where the build report says the build needs it, and save the full output to /.agentic-reviews/build/verify-phase-{N}.txt, overwriting the prior save. The file is gitignored. Where the repo has a pre-push hook that runs the same full-suite command, and you push the build commit, the hook's run counts as yours: save the push output to the verification file, and confirm the suite ran and passed, not skipped. Where it did not run, run it yourself. Never bypass the hook. Run the other verification commands yourself. Keep the output out of your own context; check only that every command passed. Where the phase has a runtime handle, start the application, run its ready check, and stop it. A failure → fix-build. Record the spec version and update the phase's tracker row.
-4. Spawn the architecture review, then the security review where the plan marks it applicable, then the QA review. Before spawning a review, re-run verification if verify-phase-{N}.txt is missing. Run every applicable review before a fix-build, even when an earlier one finds gaps. Reviews never run alongside a build, and always run against a settled build. Record each `Minor` line from each report's verdict block in the tracker.
+3. On return: commit the build. A removed or narrowed Verification command is weakening: take it to the user. Run the verification commands from the code root, the evaluation command only where the build report says the build needs it, and save the full output to `/.agentic-reviews/build/verify-phase-{N}.txt`, overwriting the prior save. The file is gitignored. Where the repo has a pre-push hook that runs the same full-suite command, and you push the build commit, the hook's run counts as yours: save the push output to the verification file, and confirm the suite ran and passed, not skipped. Where it did not run, run it yourself. Never bypass the hook. Run the other verification commands yourself. Keep the output out of your own context; check only that every command passed. Where the phase has a runtime handle, start the application, run its ready check, and stop it. A failure → fix-build. Record the spec version and update the phase's tracker row.
+4. Spawn the architecture review, then the security review where the plan marks it applicable, then the QA review. Before spawning a review, re-run verification if `verify-phase-{N}.txt` is missing. Run every applicable review before a fix-build, even when an earlier one finds gaps. Reviews never run alongside a build, and always run against a settled build. Record each `Minor` line from each report's verdict block in the tracker.
 5. Gaps routed to the developer → spawn one fix-build with every Critical and Major finding routed to the developer in the latest reports, plus the phase's open Minor findings. A developer reports that a fix needs a spec or architecture change first → route that finding as in step 6, in this phase. A developer asks to defer a finding → agree only where `CLAUDE.md` allows it and the confirmed intent settles it; otherwise ask the user. Record an agreed deferral as a carry-forward fix. On return: commit; re-run verification; then re-run every applicable review. The same review or UAT still finding gaps after two fix-builds → stop and bring it to the user. A developer reports a finding as not reproduced → re-run the review that raised it, passing the developer's report. Confirmed with a path that reaches it → fix-build. Otherwise drop it, or ask the user.
 6. Gaps routed to product-manager, ui-designer, or architect → settle the decision within the confirmed intent, or bring it to the user; then route the work to that role, naming the report and any decisions you settled. Send nothing to the developer until that role's artifact is updated. A spec change here is a new PRD version: run the PRD versions chain its row types require, through the planner, before the fix-build. Then name the changed sections in the fix-build task. Where the update needs no code change, re-run the review that raised the gap. A Non-Negotiable always goes to the user.
 7. Every applicable review CLEAR and UAT applicable → run UAT (below). UAT `N/A` → the phase completes at the reviews. UAT deviations routed to the developer → a fix-build as in step 5, per the human gates, then UAT again.
@@ -212,7 +212,7 @@ Onboarded: {date}
 PhaseCraft version: {from .claude/PHASECRAFT-VERSION}
 Interface: {user interface | headless}
 PRD version: {from the PRD summary}
-Active intent: /intents/records/NNN--slug.md
+Active intent: /intents/records/NNN--slug.md | none
 Review preference: {pause per stage and phase | run through}
 Phases per session: {from the intent; 2 by default}
 Latest full UAT: {report filename and verdict, or —}
@@ -249,7 +249,7 @@ Active intent — the confirmed intent this branch’s work runs under. An inten
 
 Cells:
 
-- Intent — the number of the intent that added the phase, or `—` where none did. A table without the column gets the Intent column when you next update the tracker: the active intent's number for it's phases not yet complete, `—` for the rest.
+- Intent — the number of the intent that added the phase, or `—` where none did. A table without the column gets the Intent column when you next update the tracker: the active intent's number for its phases not yet complete, `—` for the rest.
 - Spec version — the version the build ran against. A patch is recorded, and treated as its base minor everywhere else.
 - Model — `opus`, or `sonnet` with the date of a confirmed downgrade.
 - Build — `not started`, `in progress`, `complete`. Complete only when your verification run passes and, where the phase has a runtime handle, the application starts.
