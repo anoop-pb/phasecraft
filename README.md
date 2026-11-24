@@ -221,7 +221,7 @@ Copy the new `CLAUDE.md` over the old one. From the new `claude` folder, copy ag
 
 Sessions pick up the changes on their next start. Existing artifacts and reports are unaffected.
 
-From version 2.3.1-beta, the operator runs on the model of the session or routine that starts it, and an intent can name a model for each role (see Models and cost).
+From version 2.4.0-beta, the operator runs on the model of the session or routine that starts it, and an intent can name a model for each role (see Models and cost).
 
 From version 2.3.0-beta, a PR’s claims also list the phases its branch builds, and a routine’s open PR no longer stops other builds. The tracker’s Phases table gains an Intent column, which the operator adds on its next update. Two skills are new, `sync` and `research`.
 
