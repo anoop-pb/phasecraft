@@ -72,6 +72,7 @@ Work runs on a confirmed intent file the operator records under `/intents/record
 - What you want, and why.
 - Boundaries: what the operator must not do, touch, or decide alone.
 - Review preference: pause for your review at the end of each discussion stage and each phase, or run through.
+- Models: the default, or a model for named roles.
 - Number of phases per session.
 - Delivery options: commit only, push a branch, or push and open a PR.
 - The branch the work goes on: `phasecraft/NNN--slug`, mirroring the intent file, unless you name another. After onboarding, the operator never commits on the default branch. Where the repo has a code host, the operator opens a draft PR for the branch when you confirm the intent (see Working in a team).
@@ -135,7 +136,11 @@ DOMAIN-CONTEXT.md      domain expertise the roles assume
 
 ## Models and cost
 
-Every role runs on Opus. The architect, planner, security reviewer, and QA engineer run at high effort, set in their role files. The others use the session default. Effort cannot be changed per task. With your confirmation, the operator may move a single mechanical, fully specified task to Sonnet. It never does this for architecture, reviews, or UAT, and it records any such move in the tracker. Expect Opus-level token use. Phase sizing keeps each worker well inside one session.
+The operator runs on the model you start the session with (`model: inherit`). Each worker role runs on Opus by default, set in its role file. The architect, planner, security reviewer, and QA engineer run at high effort, set in their role files. The others use the session default. Effort cannot be changed per task.
+
+To use another model for a role, say so in your intent, for example "architect on Fable". The operator records it on the intent's `Models` line and starts that worker on it. Roles you do not name stay on Opus. With your confirmation, the operator may also move a single mechanical, fully specified task to Sonnet. It never does this for architecture, reviews, or UAT, and it records any such move in the tracker. Unless you choose otherwise, expect Opus-level token use for workers. Phase sizing keeps each worker well inside one session.
+
+To run the operator on a specific model, start the session with it, for example `claude --model fable`, or pick it with `/model`. A scheduled routine uses the model set on the routine.
 
 ## Maintenance and autopilot
 
@@ -148,7 +153,7 @@ Two modes keep the project moving, in a session or on a schedule:
 
 In a session, say "run maintenance" or "run autopilot".
 
-To run one with no one present, create a Claude Code routine on the repo with a schedule trigger, Opus as its model, and the prompt `No user is present. Run maintenance.` (or `Run autopilot.`). Schedule the two so they never overlap. A routine runs without asking for approval. What it can reach is set by the repo, its cloud environment, and the connectors you include, so remove connectors it does not need.
+To run one with no one present, create a Claude Code routine on the repo with a schedule trigger, the model you want for the operator, and the prompt `No user is present. Run maintenance.` (or `Run autopilot.`). Schedule the two so they never overlap. A routine runs without asking for approval. What it can reach is set by the repo, its cloud environment, and the connectors you include, so remove connectors it does not need.
 
 ### With no one present
 
@@ -215,6 +220,8 @@ Without a code host, run one intent at a time. When you move a local project to 
 Copy the new `CLAUDE.md` over the old one. From the new `claude` folder, copy agents/, templates/, skills/ and PHASECRAFT-VERSION into your `.claude` folder, replacing the old ones. Keep your local settings files.
 
 Sessions pick up the changes on their next start. Existing artifacts and reports are unaffected.
+
+From version 2.3.1-beta, the operator runs on the model of the session or routine that starts it, and an intent can name a model for each role (see Models and cost).
 
 From version 2.3.0-beta, a PR’s claims also list the phases its branch builds, and a routine’s open PR no longer stops other builds. The tracker’s Phases table gains an Intent column, which the operator adds on its next update. Two skills are new, `sync` and `research`.
 
