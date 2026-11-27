@@ -32,6 +32,8 @@ A session whose task says no user is present, such as a scheduled routine, reads
 
 An attended session works on the active intent's branch, never the routine’s. When it reports status, it names any open `claude/phasecraft/*` PR, every other intent's open draft PR with what it claims, and every issue or PR labelled `needs-human`.
 
+An attended session may start on a fresh branch cut from the default branch. Before the checks below, switch to the branch of the intent the task names. None named → the intent of the one open draft PR the code host's signed-in user opened; without a code host, name each `phasecraft/NNN--*` branch with commits the default branch lacks, and ask the user. More than one → ask the user. None → stay on this branch. Another worktree holds the branch → name it and stop.
+
 Check in this order; the first match applies. Files under `.claude/` are not application code.
 
 1. `TRACKER.md` exists with a `PhaseCraft version:` line (a PhaseCraft tracker) → read the repo map, the tracker, and the active intent file it names. Update the tracker's PhaseCraft version line if it differs from `.claude/PHASECRAFT-VERSION`. A tracker without that line was written by another process; go on to the next check. Task given → proceed. No clear task → report where things stand and recommend the next step.
@@ -51,6 +53,8 @@ An intent file records what the user wants and what you may decide alone. It is 
 
 - Location: `/intents/records/NNN--slug.md`, `NNN` the next intent number, claimed per Parallel work. The date goes inside.
 - Contents, all short: the intent and why; boundaries — what you must not do, touch, or decide alone; human gates; review preference — pause at the end of each discussion stage and each phase, or run through; models — `default`, or a model for each named role, such as `architect: fable`; phases per session, 2 by default; delivery setting; the branch, `phasecraft/NNN--slug` unless the user names another; an append-only amendments log, one entry per escalation: date, question, answer.
+- Models, while drafting. Where the work would gain from a stronger model for a role, recommend it, with the reason and a caution about the extra cost. Where the user names a model below Opus for architect, security-reviewer, qa-engineer or product-manager, say this may weaken that role. Record either only if the user confirms.
+- Parallel work, while drafting. Where the repo has a code host, read the Claims block of every open PR. Say whether this intent can run alongside them, judged only by the features, phases, and PRD versions they claim, and say that this is all you can see. Where parts of the draft touch different features and do not depend on each other, suggest splitting it into separate intents, and note that spec work still runs on one branch at a time. Split only if the user confirms; each part gets its own intent file, branch, and draft PR.
 - An answer within the intent and its boundaries is an amendment: append it at once, before acting on it. An answer that changes the intent or its boundaries, including any contradiction, needs a new intent file that supersedes this one. It keeps the number and takes a suffix: `NNN-1--slug.md`, then `NNN-2`, and so on. Mark the old file superseded; never otherwise edit or delete it. The work stays on the same branch and draft PR.
 - Autonomy removes review pauses, not discipline. Whatever the review preference, stop the moment something needs a decision the intent does not settle, exceeds the intent, or is hard-blocked. Spec changes made along the way appear in the session summary.
 
@@ -199,7 +203,8 @@ Run this sequence when a discussion stage ends the session, when the phase limit
 1. Update the tracker.
 2. Stop anything you started; leave no running processes and no throwaway files.
 3. Commit at the boundary per Delivery.
-4. Summarize: done, pending, open decisions, choices made where inputs were silent. Recommend the next step.
+4. In a worktree, release the intent's branch, so the next session can check it out. After that, take up no further work in this session: say that the branch is released and that the work belongs in a new session.
+5. Summarize: done, pending, open decisions, choices made where inputs were silent. Recommend the next step.
 
 ## Tracker
 

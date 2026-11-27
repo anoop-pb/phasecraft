@@ -138,7 +138,7 @@ DOMAIN-CONTEXT.md      domain expertise the roles assume
 
 The operator runs on the model you start the session with (`model: inherit`). Each worker role runs on Opus by default, set in its role file. The architect, planner, security reviewer, and QA engineer run at high effort, set in their role files. The others use the session default. Effort cannot be changed per task.
 
-To use another model for a role, say so in your intent, for example "architect on Fable". The operator records it on the intent's `Models` line and starts that worker on it. Roles you do not name stay on Opus. With your confirmation, the operator may also move a single mechanical, fully specified task to Sonnet. It never does this for architecture, reviews, or UAT, and it records any such move in the tracker. Unless you choose otherwise, expect Opus-level token use for workers. Phase sizing keeps each worker well inside one session.
+To use another model for a role, say so in your intent, for example "architect on Fable". The operator records it on the intent's `Models` line and starts that worker on it. Roles you do not name stay on Opus. While drafting the intent, the operator may recommend a stronger model for a role, with the reason and a caution about the cost. If you name a model below Opus for architecture, reviews, or UAT, it warns you that this may weaken that role. Either way, it records the model only if you confirm. With your confirmation, the operator may also move a single mechanical, fully specified task to Sonnet. It never does this for architecture, reviews, or UAT, and it records any such move in the tracker. Unless you choose otherwise, expect Opus-level token use for workers. Phase sizing keeps each worker well inside one session.
 
 To run the operator on a specific model, start the session with it, for example `claude --model fable`, or pick it with `/model`. A scheduled routine uses the model set on the routine.
 
@@ -202,6 +202,7 @@ Everything that matters is in files in git: the tracker, intent files, briefs, a
 Two or more people can each run an intent at the same time, on separate branches, when the intents touch different parts of the product. This needs a code host (e.g. GitHub) and its CLI.
 
 - **Draft PRs show who is doing what.** The operator opens a draft PR when you confirm an intent. The PR body lists what the branch has claimed: its intent number, its PRD versions, its feature numbers, the phases it builds, and the carry-forward fixes it takes. Every operator reads the open PRs before it takes a number, a phase, or a fix. A fix another PR has taken does not hold up your own PR.
+- **The operator suggests parallel work.** While drafting an intent, it says whether the intent can run alongside the open ones, judged by what their PRs claim. Where parts of a draft touch different features and do not depend on each other, it may suggest splitting the draft into separate intents. You get to decide.
 - **The intent file is always pushed**, even with delivery set to commit only: when you confirm it, and then each amendment with the work it settles. That push carries the branch's commits so far.
 - **Spec work runs on one branch at a time.** A `prd-in-progress` label on the PR shows whose turn it is. The other intents wait for spec work only; their builds go on.
 - **Overlap comes to you.** If any two open intents change the same feature, the operator asks you before design or planning runs on it.
@@ -209,9 +210,9 @@ Two or more people can each run an intent at the same time, on separate branches
 - **PRD versions stay in order.** If any other intent lands a higher version first, an integration version joins the two.
 - **Dropping an intent.** Close its PR. Its claims are released, and the numbers it used stay as gaps. Close stale draft PRs too: an open PR keeps its claims.
 
-Start each session on your own intent's branch; the tracker there is the one that describes your work.
+Name your intent when you start a session, and the operator switches to its branch. If you don't name one, it picks your only open intent, or asks you.
 
-If the same person runs two intents at once, run each in its own environment, such as a cloud session. Two local worktrees share the machine's ports and local data stores, so their applications clash when both start.
+If the same person runs two intents at once, run each in its own environment, such as a cloud session. Two local worktrees share the machine's ports and local data stores, so their applications clash when both start. A session in a worktree releases its branch when it ends, so a later session can check it out. Work after that goes in a new session.
 
 Without a code host, run one intent at a time. When you move a local project to a code host with an intent in progress, push the default branch and the intent's branch, then start a session on that intent before anyone starts a second one. The operator opens its draft PR and records the numbers it already uses.
 
@@ -220,6 +221,8 @@ Without a code host, run one intent at a time. When you move a local project to 
 Copy the new `CLAUDE.md` over the old one. From the new `claude` folder, copy agents/, templates/, skills/ and PHASECRAFT-VERSION into your `.claude` folder, replacing the old ones. Keep your local settings files.
 
 Sessions pick up the changes on their next start. Existing artifacts and reports are unaffected.
+
+From version 2.4.1, the operator switches to your intent's branch at session start, and a session in a worktree releases its branch at session end. While drafting an intent, the operator may recommend a model for a role, and may suggest running or splitting the intent in parallel.
 
 From version 2.4.0-beta, the operator runs on the model of the session or routine that starts it, and an intent can name a model for each role (see Models and cost).
 
